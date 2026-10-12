@@ -1,0 +1,22 @@
+.log {
+  width: min(720px, 100%);
+}
+
+.log > a.secondary {
+  margin-bottom: 16px;
+}
+
+.log .card {
+  margin-top: 16px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.check input {
+  width: auto;
+}

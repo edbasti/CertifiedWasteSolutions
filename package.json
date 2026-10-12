@@ -1,0 +1,35 @@
+{
+  "name": "certified-waste-solutions",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,api -c blue,green \"npm run dev -w @cws/web\" \"npm run dev -w @cws/api\"",
+    "dev:web": "npm run dev -w @cws/web",
+    "dev:api": "npm run dev -w @cws/api",
+    "build": "node scripts/vercel-prepare.mjs",
+    "postinstall": "node scripts/vercel-prepare.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "db:seed": "npm run db:seed -w @cws/api"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "concurrently": "^9.2.4",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^16.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^4.1.11"
+  }
+}

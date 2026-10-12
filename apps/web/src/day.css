@@ -1,0 +1,138 @@
+.day {
+  width: min(640px, 100%);
+}
+
+.day > .primary,
+.day > a.secondary {
+  margin-top: 16px;
+}
+
+a.secondary {
+  display: inline-block;
+  width: fit-content;
+  text-decoration: none;
+}
+
+.stop-open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+}
+
+.day-focus h3 {
+  margin: 12px 0 0;
+  font-size: 14px;
+}
+
+.day-progress {
+  margin: 8px 0 0;
+  color: var(--silverfish);
+  font-size: 14px;
+}
+
+.day-progress b {
+  color: var(--sable);
+}
+
+.notices {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.notices h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.notices button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.notices button[data-unread="true"] {
+  border-color: var(--joust-blue-2);
+}
+
+.notices small {
+  color: var(--joust-blue-3);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.day-focus {
+  display: grid;
+  gap: 8px;
+}
+
+.day-focus h2 {
+  margin: 0;
+}
+
+.pickup {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #e7f3fe;
+  color: var(--space-blue);
+  font-weight: 700;
+}
+
+.status-button {
+  justify-self: start;
+}
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.history li {
+  color: var(--silverfish);
+  font-size: 13px;
+}
+
+.photo-row,
+.note-list {
+  display: grid;
+  gap: 8px;
+}
+
+.photo-row {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+
+.photo-row img {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--crystal);
+}
+
+.note-list p {
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-button input {
+  display: none;
+}

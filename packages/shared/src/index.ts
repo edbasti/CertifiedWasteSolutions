@@ -1,0 +1,65 @@
+export const appName = "Certified Waste Solutions";
+
+export {
+  fieldOwners,
+  fieldScopes,
+  fieldValueTypes,
+  logStatuses,
+  logTypeLabels,
+  logTypes,
+  notificationTypes,
+  routeSources,
+  stopStatuses,
+  homePath,
+  userRoles,
+} from "./operations";
+export type {
+  AppNotification,
+  AssignedRoute,
+  AssignedStop,
+  CompletedStop,
+  CompletedStopReport,
+  CustomerAccount,
+  DriverAccount,
+  DriverDay,
+  DriverLog,
+  DriverLogLine,
+  LogCorrection,
+  LogSummary,
+  DriverStatusChange,
+  DriverStop,
+  DriverStopNote,
+  DriverStopPhoto,
+  ImportResult,
+  InvoiceRecord,
+  RouteImportResult,
+  StopSourceInfo,
+  FieldOwner,
+  FieldScope,
+  FieldValueType,
+  LogStatus,
+  LogType,
+  NetSuiteConnection,
+  NetSuiteCredentialSlot,
+  NetSuiteSearchColumn,
+  NotificationType,
+  PublicUser,
+  RouteSource,
+  StatusDurationAverage,
+  StopStatus,
+  UserRole,
+} from "./operations";
+export { invoiceSources, logFieldMap } from "./log-fields";
+export type { LogField } from "./log-fields";
+
+/** Colors from the Certified Waste Solutions brand guide. */
+export const brand = {
+  spaceBlue: "#012556",
+  forestGreen: "#519F44",
+  sable: "#242424",
+  joustBlue1: "#51AAFA",
+  joustBlue2: "#188EF4",
+  joustBlue3: "#3B7CB7",
+  silverfish: "#8D97AD",
+  crystal: "#EFEFEF",
+} as const;
