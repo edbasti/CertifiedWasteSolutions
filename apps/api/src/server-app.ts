@@ -24,7 +24,12 @@ export function createServerApp(shell = "") {
   function backend() {
     ready ??= (async () => {
       const { db } = openDatabase();
-      await migrateDatabase(db);
+      // Transaction pooler (Vercel) can hang on migrate DDL. Migrate/seed locally
+      // against the same database, or set MIGRATE_ON_START=1 for a one-off deploy.
+      const shouldMigrate = process.env.VERCEL !== "1" || process.env.MIGRATE_ON_START === "1";
+      if (shouldMigrate) {
+        await migrateDatabase(db);
+      }
       return createApp(db);
     })();
     return ready;

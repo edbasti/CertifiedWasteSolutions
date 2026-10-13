@@ -34,7 +34,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   const text = await response.text();
-  const data = text ? (JSON.parse(text) as T & { error?: string }) : undefined;
+  let data: (T & { error?: string }) | undefined;
+  if (text) {
+    try {
+      data = JSON.parse(text) as T & { error?: string };
+    } catch {
+      throw new ApiError(response.ok ? "Invalid response from the server." : "Something went wrong.");
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(data?.error ?? "Something went wrong.");
