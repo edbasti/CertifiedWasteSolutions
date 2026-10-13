@@ -4,9 +4,12 @@
   "installCommand": "npm ci --include=dev --include-workspace-root --prefix ../..",
   "buildCommand": "npm run build --prefix ../..",
   "outputDirectory": "public",
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/((?!api$).*)", "destination": "/index.html" }
+  ],
   "functions": {
-    "api/[...route].js": {
+    "api/index.js": {
       "includeFiles": "drizzle/**"
     }
   }

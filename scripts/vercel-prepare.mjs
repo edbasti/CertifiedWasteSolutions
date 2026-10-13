@@ -72,7 +72,9 @@ const webHandler = (importPath) => `export { default } from "${importPath}";
 
 function writeHandler(directory, importPath) {
   mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, "[...route].js"), webHandler(importPath));
+  // Single entry + vercel.json rewrite: non-Next catch-alls only match one path segment.
+  writeFileSync(join(directory, "index.js"), webHandler(importPath));
+  rmSync(join(directory, "[...route].js"), { force: true });
   const drizzleTarget = join(directory, "drizzle");
   rmSync(drizzleTarget, { recursive: true, force: true });
   cpSync(drizzleSource, drizzleTarget, { recursive: true });
