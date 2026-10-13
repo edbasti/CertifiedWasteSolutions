@@ -18,7 +18,7 @@
     "db:seed": "npm run db:seed -w @cws/api"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "dependencies": {
     "esbuild": "^0.28.2",
