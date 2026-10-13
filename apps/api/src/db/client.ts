@@ -62,7 +62,15 @@ export function openDatabase(connectionString = databaseUrl()) {
 
 export function migrationsFolder() {
   const starts = [dirname(fileURLToPath(import.meta.url)), process.cwd()];
-  const relatives = ["drizzle", "dist/drizzle", "apps/api/drizzle", "apps/api/dist/drizzle", "../../drizzle"];
+  const relatives = [
+    "drizzle",
+    "api/drizzle",
+    "dist/drizzle",
+    "apps/api/drizzle",
+    "apps/api/dist/drizzle",
+    "apps/api/api/drizzle",
+    "../../drizzle",
+  ];
   for (const start of starts) {
     let dir = start;
     for (let depth = 0; depth < 6; depth += 1) {

@@ -59,9 +59,10 @@ await esbuild.build({
   ],
 });
 
+const drizzleSource = join(root, "apps/api/drizzle");
 const migrations = join(root, "apps/api/dist/drizzle");
 rmSync(migrations, { recursive: true, force: true });
-cpSync(join(root, "apps/api/drizzle"), migrations, { recursive: true });
+cpSync(drizzleSource, migrations, { recursive: true });
 
 const nodeHandler = (importPath) => `import { handle } from "@hono/node-server/vercel";
 import app from "${importPath}";
@@ -74,8 +75,12 @@ export default function handler(req, res) {
 `;
 
 function writeHandler(directory, importPath) {
+  rmSync(directory, { recursive: true, force: true });
   mkdirSync(directory, { recursive: true });
   writeFileSync(join(directory, "[...route].js"), nodeHandler(importPath));
+  // Keep SQL migrations next to the function so Vercel packs them without a
+  // functions.includeFiles pattern that must exist before the build runs.
+  cpSync(drizzleSource, join(directory, "drizzle"), { recursive: true });
 }
 
 writeHandler(join(root, "api"), "../apps/api/dist/server.js");

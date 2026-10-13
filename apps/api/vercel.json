@@ -5,11 +5,6 @@
   "buildCommand": "npm run build --prefix ../..",
   "outputDirectory": "public",
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
-  "functions": {
-    "api/**": {
-      "includeFiles": "dist/drizzle/**"
-    }
-  },
   "build": {
     "env": {
       "VERCEL_EXPERIMENTAL_BACKENDS": "1"
