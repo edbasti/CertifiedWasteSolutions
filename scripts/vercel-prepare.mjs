@@ -4,9 +4,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const onVercel = process.env.VERCEL === "1";
 
-if (process.env.npm_lifecycle_event === "postinstall" && !onVercel) {
+// npm ci runs this script before the workspace tree is fully linked on Vercel.
+// The build command runs it again after install, when tsc and vite are on disk.
+if (process.env.npm_lifecycle_event === "postinstall") {
   process.exit(0);
 }
 
