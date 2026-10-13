@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit && node ../../node_modules/vite/bin/vite.js build",
+    "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@cws/shared": "^0.0.0",

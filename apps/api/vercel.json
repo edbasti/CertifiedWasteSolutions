@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm ci --include=dev --prefix ../..",
+  "installCommand": "npm ci --include=dev --include-workspace-root --prefix ../..",
   "buildCommand": "npm run build --prefix ../..",
   "outputDirectory": "public",
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
