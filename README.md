@@ -1,6 +1,6 @@
 # Certified Waste Solutions
 
-Browser portal for drivers, managers, and admins. The repo is a Vite + React + TypeScript web app, a Hono API, and a shared package. Data lives in Supabase Postgres. Requires Node 20.
+Browser portal for drivers, managers, and admins. The repo is a Vite + React + TypeScript web app, a Hono API, and a shared package. Data lives in Supabase Postgres. Requires Node 22.
 
 ## Run
 
