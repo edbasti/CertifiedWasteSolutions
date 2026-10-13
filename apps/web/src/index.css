@@ -363,6 +363,53 @@ textarea {
   border: 0;
 }
 
+.modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: rgba(1, 37, 86, 0.55);
+}
+
+.modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  max-height: min(90vh, 640px);
+  margin: 0;
+  overflow: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-close {
+  flex-shrink: 0;
+  padding: 8px 10px;
+}
+
+.modal-panel .row-actions {
+  margin-top: 4px;
+}
+
 @media (max-width: 560px) {
   .reset-access {
     grid-template-columns: 1fr;
@@ -373,5 +420,15 @@ textarea {
     align-items: flex-end;
     gap: 6px;
     padding: 10px 0;
+  }
+
+  .modal-root {
+    padding: 12px;
+    align-items: end;
+  }
+
+  .modal-panel {
+    width: 100%;
+    max-height: 85vh;
   }
 }

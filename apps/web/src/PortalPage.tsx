@@ -3,6 +3,7 @@ import { appName, type DriverAccount, type ImportResult } from "@cws/shared";
 import { ApiError, createDriver, importDrivers, listDrivers, resetDriverAccess, updateDriver } from "./api";
 import { CustomersPanel } from "./customers";
 import { LogsPanel } from "./logs-review";
+import { Modal } from "./Modal";
 import { NetSuitePanel } from "./netsuite";
 import { ReportsPanel } from "./reports";
 import { RoutesPanel } from "./routes";
@@ -112,16 +113,8 @@ function DriverAdmin() {
   return (
     <>
       <CreateDriver
-        editing={editing}
-        onCancel={() => setEditing(null)}
         onCreated={(name) => {
           setNotice(`${name} can sign in with the password you set.`);
-          setEditing(null);
-          void refresh();
-        }}
-        onSaved={(name) => {
-          setNotice(`Saved ${name}.`);
-          setEditing(null);
           void refresh();
         }}
       />
@@ -183,6 +176,20 @@ function DriverAdmin() {
           ))}
         </ul>
       </section>
+      {editing ? (
+        <Modal title="Edit driver" onClose={() => setEditing(null)}>
+          <CreateDriver
+            key={editing.id}
+            editing={editing}
+            onCancel={() => setEditing(null)}
+            onSaved={(name) => {
+              setNotice(`Saved ${name}.`);
+              setEditing(null);
+              void refresh();
+            }}
+          />
+        </Modal>
+      ) : null}
     </>
   );
 }
@@ -201,24 +208,17 @@ function CreateDriver({
   onSaved,
   onCancel,
 }: {
-  editing: DriverAccount | null;
-  onCreated: (name: string) => void;
-  onSaved: (name: string) => void;
-  onCancel: () => void;
+  editing?: DriverAccount | null;
+  onCreated?: (name: string) => void;
+  onSaved?: (name: string) => void;
+  onCancel?: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [companyName, setCompanyName] = useState("");
+  const [name, setName] = useState(editing?.name ?? "");
+  const [email, setEmail] = useState(editing?.email ?? "");
+  const [companyName, setCompanyName] = useState(editing?.companyName ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setName(editing?.name ?? "");
-    setEmail(editing?.email ?? "");
-    setCompanyName(editing?.companyName ?? "");
-    setPassword("");
-    setError(null);
-  }, [editing]);
+  const isEditing = Boolean(editing);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -226,10 +226,10 @@ function CreateDriver({
     try {
       if (editing) {
         await updateDriver(editing.id, { name, email, companyName });
-        onSaved(name);
+        onSaved?.(name);
       } else {
         await createDriver({ name, email, companyName, password });
-        onCreated(name);
+        onCreated?.(name);
         setName("");
         setEmail("");
         setCompanyName("");
@@ -240,22 +240,25 @@ function CreateDriver({
     }
   }
 
-  return (
-    <form className="card stack" onSubmit={onSubmit}>
-      <h2>{editing ? "Edit driver" : "New driver"}</h2>
-      <label htmlFor="driver-name">Name</label>
-      <input id="driver-name" value={name} onChange={(event) => setName(event.target.value)} required />
-      <label htmlFor="driver-email">Email</label>
+  const nameId = isEditing ? "edit-driver-name" : "driver-name";
+  const emailId = isEditing ? "edit-driver-email" : "driver-email";
+  const companyId = isEditing ? "edit-driver-company" : "driver-company";
+
+  const fields = (
+    <>
+      <label htmlFor={nameId}>Name</label>
+      <input id={nameId} value={name} onChange={(event) => setName(event.target.value)} required />
+      <label htmlFor={emailId}>Email</label>
       <input
-        id="driver-email"
+        id={emailId}
         type="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         required
       />
-      <label htmlFor="driver-company">Company name</label>
-      <input id="driver-company" value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
-      {editing ? null : (
+      <label htmlFor={companyId}>Company name</label>
+      <input id={companyId} value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
+      {isEditing ? null : (
         <>
           <label htmlFor="driver-password">Password</label>
           <input
@@ -276,14 +279,29 @@ function CreateDriver({
       ) : null}
       <div className="row-actions">
         <button className="primary" type="submit">
-          {editing ? "Save driver" : "Create driver"}
+          {isEditing ? "Save driver" : "Create driver"}
         </button>
-        {editing ? (
+        {isEditing && onCancel ? (
           <button className="secondary" type="button" onClick={onCancel}>
             Cancel
           </button>
         ) : null}
       </div>
+    </>
+  );
+
+  if (isEditing) {
+    return (
+      <form className="stack" onSubmit={onSubmit}>
+        {fields}
+      </form>
+    );
+  }
+
+  return (
+    <form className="card stack" onSubmit={onSubmit}>
+      <h2>New driver</h2>
+      {fields}
     </form>
   );
 }

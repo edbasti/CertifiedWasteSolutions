@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { CustomerAccount, ImportResult } from "@cws/shared";
 import { ApiError, createCustomer, importCustomers, listCustomers, updateCustomer } from "./api";
+import { Modal } from "./Modal";
 
 export function CustomersPanel() {
   const [customers, setCustomers] = useState<CustomerAccount[]>([]);
@@ -50,11 +51,8 @@ export function CustomersPanel() {
   return (
     <>
       <CustomerForm
-        editing={editing}
-        onCancel={() => setEditing(null)}
         onSaved={(message) => {
           setNotice(message);
-          setEditing(null);
           void refresh();
         }}
       />
@@ -110,6 +108,20 @@ export function CustomersPanel() {
           ))}
         </ul>
       </section>
+      {editing ? (
+        <Modal title="Edit location" onClose={() => setEditing(null)}>
+          <CustomerForm
+            key={editing.id}
+            editing={editing}
+            onCancel={() => setEditing(null)}
+            onSaved={(message) => {
+              setNotice(message);
+              setEditing(null);
+              void refresh();
+            }}
+          />
+        </Modal>
+      ) : null}
     </>
   );
 }
@@ -119,19 +131,14 @@ function CustomerForm({
   onSaved,
   onCancel,
 }: {
-  editing: CustomerAccount | null;
+  editing?: CustomerAccount | null;
   onSaved: (message: string) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
+  const [name, setName] = useState(editing?.name ?? "");
+  const [address, setAddress] = useState(editing?.address ?? "");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setName(editing?.name ?? "");
-    setAddress(editing?.address ?? "");
-    setError(null);
-  }, [editing]);
+  const isEditing = Boolean(editing);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -151,13 +158,22 @@ function CustomerForm({
     }
   }
 
-  return (
-    <form className="card stack" onSubmit={onSubmit}>
-      <h2>{editing ? "Edit location" : "New location"}</h2>
-      <label htmlFor="customer-name">Name</label>
-      <input id="customer-name" value={name} onChange={(event) => setName(event.target.value)} required />
-      <label htmlFor="customer-address">Address</label>
-      <input id="customer-address" value={address} onChange={(event) => setAddress(event.target.value)} required />
+  const fields = (
+    <>
+      <label htmlFor={isEditing ? "edit-customer-name" : "customer-name"}>Name</label>
+      <input
+        id={isEditing ? "edit-customer-name" : "customer-name"}
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        required
+      />
+      <label htmlFor={isEditing ? "edit-customer-address" : "customer-address"}>Address</label>
+      <input
+        id={isEditing ? "edit-customer-address" : "customer-address"}
+        value={address}
+        onChange={(event) => setAddress(event.target.value)}
+        required
+      />
       {error ? (
         <p className="form-error" role="alert">
           {error}
@@ -165,14 +181,29 @@ function CustomerForm({
       ) : null}
       <div className="row-actions">
         <button className="primary" type="submit">
-          {editing ? "Save location" : "Add location"}
+          {isEditing ? "Save location" : "Add location"}
         </button>
-        {editing ? (
+        {isEditing && onCancel ? (
           <button className="secondary" type="button" onClick={onCancel}>
             Cancel
           </button>
         ) : null}
       </div>
+    </>
+  );
+
+  if (isEditing) {
+    return (
+      <form className="stack" onSubmit={onSubmit}>
+        {fields}
+      </form>
+    );
+  }
+
+  return (
+    <form className="card stack" onSubmit={onSubmit}>
+      <h2>New location</h2>
+      {fields}
     </form>
   );
 }
