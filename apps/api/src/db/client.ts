@@ -64,7 +64,10 @@ export function openDatabase(connectionString = databaseUrl()) {
     max: process.env.VERCEL ? 1 : 10,
     prepare: false,
     idle_timeout: 20,
-    connect_timeout: 10,
+    connect_timeout: 5,
+    connection: {
+      statement_timeout: 15_000,
+    },
   });
   const db = drizzlePostgres(client, { schema });
   return { client, db };

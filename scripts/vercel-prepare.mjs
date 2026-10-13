@@ -65,19 +65,14 @@ const migrations = join(root, "apps/api/dist/drizzle");
 rmSync(migrations, { recursive: true, force: true });
 cpSync(drizzleSource, migrations, { recursive: true });
 
-const nodeHandler = (importPath) => `import { handle } from "@hono/node-server/vercel";
-import app from "${importPath}";
-
-const listener = handle(app);
-
-export default function handler(req, res) {
-  return listener(req, res);
-}
+// Export the Hono app directly (Web Fetch API). The Node req/res adapter can hang
+// when reading POST bodies on Vercel.
+const webHandler = (importPath) => `export { default } from "${importPath}";
 `;
 
 function writeHandler(directory, importPath) {
   mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, "[...route].js"), nodeHandler(importPath));
+  writeFileSync(join(directory, "[...route].js"), webHandler(importPath));
   const drizzleTarget = join(directory, "drizzle");
   rmSync(drizzleTarget, { recursive: true, force: true });
   cpSync(drizzleSource, drizzleTarget, { recursive: true });

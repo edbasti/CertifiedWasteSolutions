@@ -54,6 +54,7 @@ export function loginRequest(email: string, password: string) {
   return request<{ user: PublicUser }>("/api/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+    signal: AbortSignal.timeout(20_000),
   });
 }
 
