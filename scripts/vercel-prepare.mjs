@@ -28,7 +28,6 @@ function publishStatic(target) {
   cpSync(webDist, target, { recursive: true });
 }
 
-// Vercel's Hono runtime serves files from /public on the CDN.
 publishStatic(join(root, "public"));
 publishStatic(join(root, "apps/api/public"));
 
@@ -66,8 +65,25 @@ const migrations = join(root, "apps/api/dist/drizzle");
 rmSync(migrations, { recursive: true, force: true });
 cpSync(drizzleSource, migrations, { recursive: true });
 
-// Entry files for Vercel's Hono detector (server.js at repo root / apps/api).
-writeFileSync(join(root, "server.js"), 'export { default } from "./apps/api/dist/server.js";\n');
-writeFileSync(join(root, "apps/api/server.js"), 'export { default } from "./dist/server.js";\n');
+const nodeHandler = (importPath) => `import { handle } from "@hono/node-server/vercel";
+import app from "${importPath}";
+
+const listener = handle(app);
+
+export default function handler(req, res) {
+  return listener(req, res);
+}
+`;
+
+function writeHandler(directory, importPath) {
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, "[...route].js"), nodeHandler(importPath));
+  const drizzleTarget = join(directory, "drizzle");
+  rmSync(drizzleTarget, { recursive: true, force: true });
+  cpSync(drizzleSource, drizzleTarget, { recursive: true });
+}
+
+writeHandler(join(root, "api"), "../apps/api/dist/server.js");
+writeHandler(join(root, "apps/api/api"), "../dist/server.js");
 
 console.log("Prepared the Vercel web build and API bundle.");

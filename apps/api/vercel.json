@@ -1,10 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "installCommand": "npm ci --include=dev --include-workspace-root --prefix ../..",
   "buildCommand": "npm run build --prefix ../..",
-  "build": {
-    "env": {
-      "VERCEL_EXPERIMENTAL_BACKENDS": "1"
-    }
-  }
+  "outputDirectory": "public",
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
 }
