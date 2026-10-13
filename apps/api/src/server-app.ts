@@ -43,7 +43,10 @@ export function createServerApp(shell = "") {
     } catch (error) {
       console.error(error);
       const message = error instanceof Error ? error.message : "The API failed to start.";
-      const safe = message.includes("DATABASE_URL") ? message : "The API failed to start.";
+      const safe =
+        message.includes("DATABASE_URL") || message.includes("migrations")
+          ? message
+          : "The API failed to start.";
       return c.json({ error: safe }, 500);
     }
   });

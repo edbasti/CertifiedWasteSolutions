@@ -40,7 +40,17 @@ function loadLocalEnv() {
 loadLocalEnv();
 
 export function databaseUrl() {
-  const url = process.env.DATABASE_URL;
+  let url = process.env.DATABASE_URL?.trim() ?? "";
+  // Common Vercel mistake: pasting the whole .env line into the value field.
+  if (url.startsWith("DATABASE_URL=")) {
+    url = url.slice("DATABASE_URL=".length).trim();
+  }
+  if (
+    (url.startsWith('"') && url.endsWith('"')) ||
+    (url.startsWith("'") && url.endsWith("'"))
+  ) {
+    url = url.slice(1, -1);
+  }
   if (!url) {
     throw new Error(
       "DATABASE_URL is required. Use the Postgres connection string from Supabase Project Settings → Database.",
@@ -60,8 +70,29 @@ export function openDatabase(connectionString = databaseUrl()) {
   return { client, db };
 }
 
+function isMigrationsFolder(candidate: string) {
+  return existsSync(join(candidate, "meta", "_journal.json"));
+}
+
 export function migrationsFolder() {
-  const starts = [dirname(fileURLToPath(import.meta.url)), process.cwd()];
+  const here = dirname(fileURLToPath(import.meta.url));
+  const cwd = process.cwd();
+  const direct = [
+    join(cwd, "apps/api/drizzle"),
+    join(cwd, "api/drizzle"),
+    join(cwd, "drizzle"),
+    join(here, "drizzle"),
+    join(here, "../drizzle"),
+    join(here, "../../drizzle"),
+    join(here, "../../../apps/api/drizzle"),
+  ];
+  for (const candidate of direct) {
+    if (isMigrationsFolder(candidate)) {
+      return candidate;
+    }
+  }
+
+  const starts = [here, cwd];
   const relatives = [
     "drizzle",
     "api/drizzle",
@@ -76,7 +107,7 @@ export function migrationsFolder() {
     for (let depth = 0; depth < 6; depth += 1) {
       for (const relative of relatives) {
         const candidate = join(dir, relative);
-        if (existsSync(join(candidate, "meta", "_journal.json"))) {
+        if (isMigrationsFolder(candidate)) {
           return candidate;
         }
       }
