@@ -1,9 +1,11 @@
 /* The session hook lives next to the provider that owns its context. */
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate } from "react-router";
 import { homePath, type PublicUser, type UserRole } from "@cws/shared";
 import { ApiError, currentUser, loginRequest, logoutRequest } from "./api";
+
+const signedOutFlag = "cws_signed_out";
 
 type SessionValue = {
   user: PublicUser | null;
@@ -17,25 +19,44 @@ const SessionContext = createContext<SessionValue | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadGeneration = useRef(0);
 
   useEffect(() => {
     let active = true;
-    currentUser()
-      .then((next) => {
-        if (active) {
-          setUser(next);
+    const generation = loadGeneration.current;
+
+    async function restore() {
+      if (sessionStorage.getItem(signedOutFlag)) {
+        sessionStorage.removeItem(signedOutFlag);
+        try {
+          await logoutRequest();
+        } catch {
+          // Cookie clear may have failed once already; still show the login screen.
         }
-      })
-      .catch(() => {
-        if (active) {
+        if (active && generation === loadGeneration.current) {
           setUser(null);
-        }
-      })
-      .finally(() => {
-        if (active) {
           setLoading(false);
         }
-      });
+        return;
+      }
+
+      try {
+        const next = await currentUser();
+        if (active && generation === loadGeneration.current) {
+          setUser(next);
+        }
+      } catch {
+        if (active && generation === loadGeneration.current) {
+          setUser(null);
+        }
+      } finally {
+        if (active && generation === loadGeneration.current) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void restore();
     return () => {
       active = false;
     };
@@ -44,7 +65,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     try {
       const result = await loginRequest(email, password);
+      sessionStorage.removeItem(signedOutFlag);
+      loadGeneration.current += 1;
       setUser(result.user);
+      setLoading(false);
       return null;
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Could not sign in.";
@@ -53,8 +77,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
-    await logoutRequest();
+    // Invalidate any in-flight /api/me so it cannot restore the previous user.
+    loadGeneration.current += 1;
+    setLoading(false);
     setUser(null);
+    sessionStorage.setItem(signedOutFlag, "1");
+    try {
+      await logoutRequest();
+      sessionStorage.removeItem(signedOutFlag);
+    } catch {
+      // Keep the flag so the next page load retries clearing the server session.
+    }
+    if (window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
   }
 
   return <SessionContext.Provider value={{ user, loading, login, logout }}>{children}</SessionContext.Provider>;

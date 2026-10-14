@@ -219,6 +219,11 @@ export function LogsPanel() {
 
   return (
     <section className="card stack">
+      <h2>Driver logs</h2>
+      <p className="lede">
+        This is where office staff review logs drivers submitted for billing. Drafts stay on the driver side until they
+        choose Submit log. Stop activity (notes and photos) is under Routes and Stop reports — not here.
+      </p>
       <h2>Find an invoice</h2>
       <label htmlFor="invoice-driver">Driver</label>
       <input id="invoice-driver" value={driverQuery} onChange={(event) => setDriverQuery(event.target.value)} />
@@ -249,7 +254,12 @@ export function LogsPanel() {
         </ul>
       ) : null}
       <h2>Submitted logs</h2>
-      {logs.length === 0 ? <p className="lede">No logs are waiting.</p> : null}
+      {logs.length === 0 ? (
+        <p className="lede">
+          No submitted driver logs yet. Sign in as a driver, open the driver log for a service date, fill it in, and
+          choose Submit log — then it appears here for review and invoicing.
+        </p>
+      ) : null}
       <ul className="driver-list">
         {logs.map((log) => (
           <li key={log.id}>

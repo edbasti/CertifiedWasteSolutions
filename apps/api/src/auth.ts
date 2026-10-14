@@ -43,14 +43,27 @@ function validEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function cookieSecure() {
+  return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+}
+
 function cookieOptions() {
   return {
     httpOnly: true,
     sameSite: "Lax" as const,
     path: "/",
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(),
     maxAge: sessionMs / 1000,
   };
+}
+
+function clearSessionCookie(c: Context) {
+  // Must match the attributes used when the cookie was set, or browsers keep it.
+  deleteCookie(c, sessionCookie, {
+    path: "/",
+    secure: cookieSecure(),
+    sameSite: "Lax",
+  });
 }
 
 export function requireUser(db: CwsDatabase): MiddlewareHandler<AppEnv> {
@@ -131,7 +144,7 @@ export function registerAuth(app: Hono<AppEnv>, db: CwsDatabase) {
     if (token) {
       await db.delete(sessions).where(eq(sessions.id, token));
     }
-    deleteCookie(c, sessionCookie, { path: "/" });
+    clearSessionCookie(c);
     return c.json({ ok: true });
   });
 

@@ -48,10 +48,10 @@ export function PortalPage() {
             Routes
           </button>
           <button type="button" role="tab" aria-selected={section === "logs"} onClick={() => setSection("logs")}>
-            Logs
+            Driver logs
           </button>
           <button type="button" role="tab" aria-selected={section === "reports"} onClick={() => setSection("reports")}>
-            Reports
+            Stop reports
           </button>
         </div>
         {section === "drivers" && isAdmin ? <DriverAdmin /> : null}
