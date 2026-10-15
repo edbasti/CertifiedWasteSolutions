@@ -27,6 +27,18 @@ describe("dispatch truck report", () => {
     expect(parsed.rows[1]?.driverEmail).toBe("alex.rivera@cws.local");
   });
 
+  it("gives unique sequences when NetSuite repeats Stop=1 across runs", () => {
+    const csv = `Driver,Run,Stop,Date,Customer,Address,City,Commodity,Action
+3RD-GG Express,1,1,2026-10-13,Legacy Farms,1745 W Penhall Way,Anaheim,CBS,Dump & Return
+3RD-GG Express,3,1,2026-10-13,Legacy Farms,1745 W Penhall Way,Anaheim,OCC-Loose,Dump & Return
+3RD-GG Express,2,1,2026-10-13,Legacy Farms,1745 W Penhall Way,Anaheim,OCC-Loose,Dump & Return
+`;
+    const parsed = parseDispatchCsv(csv);
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.rows.map((row) => row.sequence).sort()).toEqual([1, 2, 3]);
+    expect(new Set(parsed.rows.map((row) => row.sequence)).size).toBe(3);
+  });
+
   it("matches drivers by email or normalized name", () => {
     const parsed = parseDispatchCsv(sampleCsv);
     const matches = matchDriversToDispatch(parsed.rows, [

@@ -243,8 +243,9 @@ export function parseDispatchMatrix(matrix: string[][]): Omit<DispatchImportPrev
       }
       return a.line - b.line;
     });
+    // NetSuite often repeats Stop=1 across different Runs; portal routes need unique sequences.
     ordered.forEach((row, index) => {
-      row.sequence = row.stop ?? index + 1;
+      row.sequence = index + 1;
     });
   }
 

@@ -117,9 +117,10 @@ function plansFromDispatch(
   const plans: StopPlan[] = [...groups.values()].map((group) => ({
     driverEmail: group.email,
     serviceDate: group.serviceDate,
+    // Always renumber 1..n after sort so duplicate NetSuite Stop values cannot collide.
     stops: group.stops
       .sort((a, b) => a.sequence - b.sequence || a.line - b.line)
-      .map((stop, index) => ({ ...stop, sequence: stop.sequence || index + 1 })),
+      .map((stop, index) => ({ ...stop, sequence: index + 1 })),
   }));
 
   return { plans, errors };
@@ -209,24 +210,38 @@ export function registerNetSuite(app: Hono<AppEnv>, db: CwsDatabase) {
       body.assignments && typeof body.assignments === "object" && !Array.isArray(body.assignments)
         ? (body.assignments as Record<string, string>)
         : {};
-    const drivers = await activeDrivers(db);
-    const planned = plansFromDispatch(rows, assignments, drivers);
-    const result: RouteImportResult = {
-      createdRoutes: 0,
-      replacedRoutes: 0,
-      stops: 0,
-      errors: [...planned.errors],
-    };
-    if (planned.plans.length === 0) {
-      return c.json(
-        result.errors.length > 0 ? result : { error: "Assign at least one driver before importing." },
-        result.errors.length > 0 ? 200 : 400,
-      );
+    try {
+      const drivers = await activeDrivers(db);
+      const planned = plansFromDispatch(rows, assignments, drivers);
+      const result: RouteImportResult = {
+        createdRoutes: 0,
+        replacedRoutes: 0,
+        stops: 0,
+        errors: [...planned.errors],
+      };
+      if (planned.plans.length === 0) {
+        return c.json(
+          result.errors.length > 0 ? result : { error: "Assign at least one driver before importing." },
+          result.errors.length > 0 ? 200 : 400,
+        );
+      }
+      for (const plan of planned.plans) {
+        await applyPlan(db, plan, c.get("user").id, result, "netsuite");
+      }
+      return c.json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not import the dispatch file.";
+      if (/unique|duplicate|stops_route_sequence/i.test(message)) {
+        return c.json(
+          {
+            error:
+              "That import had duplicate stop numbers for the same driver and date. Try again — sequences are renumbered automatically now.",
+          },
+          409,
+        );
+      }
+      return c.json({ error: message }, 500);
     }
-    for (const plan of planned.plans) {
-      await applyPlan(db, plan, c.get("user").id, result, "netsuite");
-    }
-    return c.json(result);
   });
 
   app.get("/api/netsuite/dispatch/export", signedIn, staff, async (c) => {
