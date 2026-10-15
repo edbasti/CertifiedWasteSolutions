@@ -4,9 +4,23 @@ This guide explains how to use Certified Waste Solutions day to day. No technica
 
 The system follows one simple flow:
 
-1. **Plan stops** — Office staff set up locations and assign routes.
+1. **Plan stops** — Office staff set up customers/locations and assign routes (including NetSuite dispatch files).
 2. **Track work** — Drivers update stop status, notes, and photos in the field.
 3. **Close the books** — Managers review driver logs and create invoices.
+
+---
+
+## What’s new (recent updates)
+
+| Change | What it means for you |
+|--------|------------------------|
+| **Left-hand portal menu** | Operations uses a sidebar (Dashboard, Routes & Stops, Driver Logs, Invoices, Reports, Customers, Drivers, NetSuite), not a row of tabs across the top. |
+| **Edit opens a popup** | **Edit** on a customer or driver opens a dialog in the center of the screen (or near the bottom on a phone). You do not scroll to the top of the page. |
+| **Sign out to switch accounts** | **Sign out** clears your session and takes you to the sign-in page so you can try another profile (for example admin → driver). |
+| **Driver Logs vs Reports** | **Driver Logs** = Independent Driver Logs (port / non-port) after drivers submit. **Reports** = completed route stops only. **Invoices** = find/send finished invoices. |
+| **Independent Driver Log (driver)** | After stops, drivers open **Independent Driver Log** on their day screen, fill ticket lines, and submit. |
+| **NetSuite dispatch files** | Managers and admins can **import** and **export** Dispatch Truck Reports as **Excel (.xlsx)** or **CSV**, then assign NetSuite driver names to portal drivers. |
+| **Dashboard** | Today’s overview of stops, completion, and recent activity. |
 
 ---
 
@@ -15,7 +29,7 @@ The system follows one simple flow:
 | Role | What you mainly do | Where you land after login |
 |------|--------------------|----------------------------|
 | **Driver** | Run today’s route and submit a driver log | Today’s stops |
-| **Manager** | Plan routes, watch progress, review logs, invoice | Operations portal |
+| **Manager** | Plan routes, watch progress, review logs, invoice, NetSuite files | Operations portal |
 | **Admin** | Everything a manager can do, plus manage drivers | Operations portal |
 
 Use a web browser on a phone, tablet, or computer. Drivers usually work from a phone.
@@ -33,15 +47,23 @@ Use a web browser on a phone, tablet, or computer. Drivers usually work from a p
 
 If sign-in fails, check the email spelling and password. If your account was turned off, ask an administrator to reactivate you.
 
-### Sign out
+### Sign out (and switch to another profile)
 
-On any signed-in page, choose **Sign out** in the top bar.
+1. Choose **Sign out** (top bar on driver pages, or bottom of the portal sidebar).
+2. You are taken to the **Sign in** page.
+3. Enter the other person’s email and password (for training, see [Training accounts](#training-accounts-demo-only)).
+
+If the screen still looks signed in after Sign out, refresh the page once, then sign in again.
 
 ### What you see after login
 
-- **Drivers** go to their stop list for the service day.
-- **Managers and admins** go to the **Operations** portal with tabs such as Locations, Routes, Logs, and Reports.
-- **Admins** also see **Drivers** and **NetSuite**.
+- **Drivers** go to their stop list for the service day, with a progress bar and stop cards.
+- **Managers and admins** go to the **Operations** portal with a **left sidebar**:
+  - **Workspace:** Dashboard, Routes & Stops, Driver Logs, Invoices, Reports  
+  - **Manage:** Customers, Drivers (admin only), NetSuite  
+- Use **← Homepage** in the top bar to return to the public site without signing out.
+
+On a phone, open the menu with the **☰** button if the sidebar is hidden.
 
 ---
 
@@ -49,17 +71,17 @@ On any signed-in page, choose **Sign out** in the top bar.
 
 **Goal:** Each driver knows where to go, in what order, with live status.
 
-### For managers / admins — set up locations
+### For managers / admins — set up customers & locations
 
-1. Open the portal and choose the **Locations** tab.
+1. Open the portal sidebar → **Customers**.
 2. Under **New location**, enter the **Name** and **Address**.
 3. Choose **Add location**.
 
 **Edit a location**
 
-1. In the Locations list, choose **Edit**.
-2. Change the name or address in the popup.
-3. Choose **Save location**, or **Cancel** / **Close** to leave without saving.
+1. In the list, choose **Edit**.
+2. A **popup** opens with the name and address.
+3. Choose **Save location**, or **Cancel** / **Close** / click outside to leave without saving.
 
 **Turn a location off or on**
 
@@ -69,12 +91,12 @@ On any signed-in page, choose **Sign out** in the top bar.
 **Import many locations at once**
 
 1. Prepare a spreadsheet saved as CSV with columns: `name`, `address` (optional: `active`).
-2. On Locations, choose the CSV file under **Import locations**.
+2. On Customers, choose the CSV file under **Import locations**.
 3. Read the green notice to confirm how many were added or updated.
 
 ### For managers / admins — build a route for a day
 
-1. Open the **Routes** tab.
+1. Open **Routes & Stops**.
 2. Set the **Service date** (the day the work happens).
 3. Under **Add a stop**:
    - Pick the **driver**.
@@ -83,7 +105,9 @@ On any signed-in page, choose **Sign out** in the top bar.
 4. Save / add the stop.
 5. Repeat until the driver’s day is planned.
 
-**Import many stops at once**
+**Or import from NetSuite** — see [Requirement 8](#requirement-8-netsuite-dispatch-import--export-managers-and-administrators).
+
+**Import many stops with a simple CSV** (Routes page)
 
 CSV columns: `driverEmail`, `serviceDate`, `customer`, `pickup`  
 Optional: `address`, `sequence`
@@ -93,12 +117,19 @@ Optional: `address`, `sequence`
 For stops still **Not started**, you can move them up/down or **Remove** them.  
 Once a driver has progressed a stop, treat it as field work in progress.
 
+### Dashboard (office overview)
+
+1. Open **Dashboard**.
+2. See stops today, completed count, in-progress count, and items that may need attention.
+3. Use **Open routes** or **View all routes** to jump into **Routes & Stops**.
+
 ### For drivers — view your day
 
 1. After login you see **Today’s stops**.
 2. Confirm the **service date** at the top (change it if you need another day).
-3. Read each stop: customer, address, pickup info, and status.
-4. Use the progress line (for example “3 of 8 complete”) to see how the day is going.
+3. Read each stop card: customer, address, pickup info, and status chip.
+4. Use the progress bar (for example “3 of 8 complete”) to see how the day is going.
+5. Use **Review & submit driver log →** when you are ready to close the day on paper.
 
 If the list is empty, you are not assigned for that date — contact the office.
 
@@ -128,7 +159,7 @@ Statuses in plain language:
 
 ### For managers / admins — watch live progress
 
-1. Open **Routes** and pick the service date.
+1. Open **Routes & Stops** and pick the service date (or start from **Dashboard**).
 2. Use the summary counts (not started / en route / completed).
 3. Expand a stop’s **Activity** to see status history, notes, and photos from the driver.
 
@@ -147,7 +178,7 @@ Statuses in plain language:
 
 ### For managers / admins
 
-On **Routes**, open a stop’s activity to review notes and photos.  
+On **Routes & Stops**, open a stop’s activity to review notes and photos.  
 On **Reports**, completed stops can also show this detail for past work.
 
 ---
@@ -158,11 +189,11 @@ On **Reports**, completed stops can also show this detail for past work.
 
 ### For drivers
 
-On your day list, use move **up** / **down** controls when you need a different order (for traffic, customer readiness, or office direction).
+On your day list, use **Move up** / **Move down** when you need a different order (for traffic, customer readiness, or office direction).
 
 ### For managers / admins
 
-On **Routes**, reorder or remove stops that are still **Not started**.
+On **Routes & Stops**, reorder or remove stops that are still **Not started**.
 
 ---
 
@@ -172,7 +203,7 @@ On **Routes**, reorder or remove stops that are still **Not started**.
 
 ### For drivers — fill and submit the log
 
-1. From the day view, open the **Driver log** for that service date (or go to the log page for the date).
+1. From the day view, choose **Review & submit driver log →** (or open the log for that date).
 2. Choose the log type:
    - **Independent Driver Log (Non-Port)** — standard jobs
    - **Independent Driver Log (Port)** — port / terminal jobs
@@ -204,24 +235,29 @@ After submit, the log is locked for you. The office reviews it. If they correct 
 
 Common fixes: add a company name at the top, add at least one line, and make sure each line has ticket date, ticket number, and price (plus company/booking fields for that log type).
 
-### For managers / admins — review logs and create invoices
+### For managers / admins — review submitted logs
 
-1. Open the **Logs** tab.
-2. Under **Submitted logs**, open a log that is waiting.
+> Driver billing submissions are under **Driver Logs**, not **Reports**.
+
+1. Open **Driver Logs** in the sidebar.
+2. Under **Submitted logs**, open a log that is waiting.  
+   If the list says nothing is waiting, no driver has submitted a log yet (drafts stay on the driver side until they choose **Submit log**).
 3. Enter the payment date:
    - Non-port: **Date Paid**
    - Port: **Payment Date (Friday)**
-4. Choose **Complete log** to move it toward invoicing.
+4. Choose **Complete log** to generate the invoice.
 5. Download **Invoice PDF** and/or **Log PDF** as needed.
 6. Choose **Send to accounting** when ready (if email is not configured, the system still records the send step and you can download the files).
 
 **Find an older invoice**
 
-Use **Find an invoice** with driver name and service date.
+1. Open **Invoices** in the sidebar.
+2. Enter driver name and service date.
+3. Choose **Search**, then download PDFs or **Send to accounting**.
 
 **Correct a mistake after review**
 
-1. Open the log.
+1. Open the log from **Driver Logs**.
 2. Update company name, payment date, and/or line prices as allowed.
 3. Choose **Save correction**.  
    The system keeps a history of what changed.
@@ -242,9 +278,11 @@ Use **Find an invoice** with driver name and service date.
 
 **Goal:** See what finished across drivers and customers, with timing and export.
 
+> This is **route** activity, not driver billing logs. For billing, use **Driver Logs** / **Invoices**.
+
 ### For managers / admins
 
-1. Open the **Reports** tab.
+1. Open **Reports** in the sidebar.
 2. Optionally filter by **Driver**, **Customer**, and date range (**From** / **To**).
 3. Run the report.
 4. Review averages between status changes and each completed stop’s detail (including notes/photos when present).
@@ -258,7 +296,7 @@ Use **Find an invoice** with driver name and service date.
 
 ### Create a driver
 
-1. Open the **Drivers** tab (admins only).
+1. Open **Drivers** in the sidebar (admins only).
 2. Under **New driver**, enter name, email, company name (optional), and a password (at least 8 characters).
 3. Choose **Create driver**.  
    Share the email and temporary password with the driver securely.
@@ -266,7 +304,7 @@ Use **Find an invoice** with driver name and service date.
 ### Edit a driver
 
 1. Choose **Edit** on the driver row.
-2. Update name, email, or company in the popup.
+2. A **popup** opens — update name, email, or company.
 3. Choose **Save driver**.
 
 ### Deactivate / reactivate
@@ -287,27 +325,52 @@ Optional: `companyName`, `active`
 
 ---
 
-## Requirement 8: NetSuite status (administrators)
+## Requirement 8: NetSuite dispatch import / export (managers and administrators)
 
-**Goal:** See whether NetSuite is connected for future automated stops.
+**Goal:** Bring a NetSuite **Dispatch Truck Report** into driver routes, and export portal stops in the same layout.
 
-1. Open the **NetSuite** tab (admins only).
-2. Read the current status. Today, stops still come from **CSV import** or **manual add** on Routes.
-3. Credential slots show whether values are set (the secret values themselves stay hidden).
+### Import from NetSuite
 
-When NetSuite is fully connected later, this tab is where connection status and mapping notes will live. Until then, keep using Routes import / add stop.
+1. In NetSuite, export the **Dispatch Truck Report** for the dates you need (Excel or CSV).
+2. In the portal, open **NetSuite**.
+3. Under **Import Dispatch Truck Report**, choose the `.xlsx` or `.csv` file.
+4. Review the preview and **Assign drivers**:
+   - Names that match a portal driver are filled in automatically.
+   - For any name that still says it needs assignment, pick the correct portal driver from the dropdown.
+5. Choose **Import and assign routes**.
+6. Stops are created (or replaced, if that driver already had an unfinished route for that date).
+7. Drivers can open that **service date** on their phone to run the route.
+
+**Expected columns** (same idea as the NetSuite report):
+
+Driver, In/Out, N° Dispatch, Run, Stop, Date, Customer, Address, City, Destination, Commodity, Container Type, Container Qty, Action, Dispatch notes, Dispatch type, Priority, Dispatched By
+
+Pickup text in the portal is built from Action, Commodity, container info, and notes when those columns are filled.
+
+Rows missing a driver, date, customer, or address/city are skipped and listed as row errors — fix them in NetSuite or add the stop by hand under **Routes & Stops**.
+
+### Export back to NetSuite layout
+
+1. Still on **NetSuite**, open **Export Dispatch Truck Report**.
+2. Choose **From** and **To** service dates.
+3. Choose **Download Excel** or **Download CSV**.
+
+### Optional credentials
+
+Credential slots on the NetSuite page are for a future live connection. You do **not** need them for file import/export today.
 
 ---
 
-## Quick reference — CSV imports
+## Quick reference — file imports
 
-| Import | Tab | Required columns | Optional |
-|--------|-----|------------------|----------|
-| Locations | Locations | `name`, `address` | `active` |
-| Drivers | Drivers (admin) | `name`, `email`, `password` | `companyName`, `active` |
-| Route stops | Routes | `driverEmail`, `serviceDate`, `customer`, `pickup` | `address`, `sequence` |
+| Import | Where | Formats | Required columns / notes |
+|--------|-------|---------|---------------------------|
+| Customers / locations | Customers | CSV | `name`, `address` (optional: `active`) |
+| Drivers | Drivers (admin) | CSV | `name`, `email`, `password` (optional: `companyName`, `active`) |
+| Route stops (simple) | Routes & Stops | CSV | `driverEmail`, `serviceDate`, `customer`, `pickup` (optional: `address`, `sequence`) |
+| NetSuite dispatch | NetSuite | **Excel or CSV** | Dispatch Truck Report columns; assign drivers after preview |
 
-Tip: Open your spreadsheet app, fill one header row with these exact names, then **Save as CSV** before importing.
+Tip: For simple CSVs, use one header row with the exact names above, then **Save as CSV**. For NetSuite, keep the report headers as exported.
 
 ---
 
@@ -323,29 +386,31 @@ Tip: Open your spreadsheet app, fill one header row with these exact names, then
 ### Driver — end of day
 
 - [ ] Mark remaining stops complete  
-- [ ] Open the driver log for that date  
+- [ ] Open **Review & submit driver log**  
 - [ ] Fill company name and all ticket lines  
 - [ ] **Submit log**  
 
 ### Manager — plan the day
 
-- [ ] Locations up to date  
-- [ ] Routes built for the service date (manual or CSV)  
-- [ ] Drivers notified if anything changed  
+- [ ] Customers / locations up to date  
+- [ ] Routes built (manual, simple CSV, or **NetSuite** dispatch import)  
+- [ ] Unmatched NetSuite driver names assigned before import  
+- [ ] Confirm **Dashboard** or **Routes & Stops** looks right  
 
 ### Manager — close the books
 
-- [ ] Check Routes for unfinished stops  
-- [ ] Open **Logs** → submitted queue  
+- [ ] Check **Routes & Stops** for unfinished work  
+- [ ] Open **Driver Logs** → submitted queue  
 - [ ] Enter payment date → **Complete log**  
-- [ ] Download PDFs / **Send to accounting**  
-- [ ] Run **Reports** if leadership needs a summary  
+- [ ] Use **Invoices** to find older invoices / send to accounting  
+- [ ] Run **Reports** if leadership needs stop timing summaries  
 
 ### Admin — access hygiene
 
 - [ ] Create or import new drivers before their first day  
 - [ ] Reset access when someone forgets a password  
 - [ ] Deactivate people who leave  
+- [ ] Sign out before testing a driver account on a shared computer  
 
 ---
 
@@ -354,12 +419,16 @@ Tip: Open your spreadsheet app, fill one header row with these exact names, then
 | Problem | What to try |
 |---------|-------------|
 | Cannot sign in | Recheck email/password; ask admin if the account is inactive |
-| Driver sees no stops | Wrong service date, or office has not assigned a route yet |
-| Edit button “does nothing” | A popup should open — look for the dialog in the center of the screen; on phone it may sit near the bottom |
+| Cannot sign out / switch profiles | Use **Sign out**, wait for the login page, then sign in as the other user; refresh once if needed |
+| Driver sees no stops | Wrong service date, or office has not assigned a route yet (check NetSuite import assignments) |
+| Edit button “does nothing” | Look for the **popup** in the center of the screen (near the bottom on a phone) |
+| Cannot find driver submissions | Open **Driver Logs**, not **Reports**. The queue stays empty until a driver chooses **Submit log** |
 | Cannot submit log | Fill company name, at least one line, and required ticket/price fields |
 | Log will not let me edit | Already submitted — ask the manager to correct it if needed |
-| Deactivate / save fails on the live site | Tell your technical contact; nested API updates may need a deploy fix |
-| Invoice not found | Search with the same driver spelling and exact service date used on the log |
+| NetSuite import blocked | Assign every unmatched driver name, then import again |
+| Some NetSuite rows skipped | Those rows likely lack address/city (or other required fields); fix in the file or add the stop manually |
+| Invoice not found | Use **Invoices** search with the same driver spelling and exact service date |
+| Sidebar missing on phone | Tap **☰** to open the menu |
 
 ---
 
@@ -374,12 +443,14 @@ If your team uses the demo seed data, every demo password is `demo-password`:
 | alex.rivera@cws.local | Driver (includes a sample September 30 route) |
 | sam.thompson@cws.local | Driver |
 
+**Suggested walkthrough:** Sign in as Jordan → **Sign out** → sign in as Alex → submit a log for a service date → **Sign out** → sign in as Chino or Jordan → open **Driver Logs**.
+
 Do not use demo passwords for real production accounts.
 
 ---
 
 ## Need help?
 
-Start with your office manager for route and log questions.  
+Start with your office manager for route, NetSuite file, and log questions.  
 Ask an administrator for sign-in, password reset, or new driver setup.  
 Ask your technical contact for website outages or errors that mention the system could not save or load data.

@@ -25,12 +25,13 @@ export type StopSource = {
   plan: (input: string) => { plans: StopPlan[]; errors: { line: number; message: string }[] };
 };
 
-const netsuiteDetail = "NetSuite is not connected. Import a CSV or add stops by hand.";
+const netsuiteDetail =
+  "Import a NetSuite Dispatch Truck Report (.xlsx or .csv) from the NetSuite page, then assign unmatched drivers.";
 
 export const stopSources: StopSourceInfo[] = [
   { id: "csv", label: "CSV file", available: true },
   { id: "manual", label: "By hand", available: true },
-  { id: "netsuite", label: "NetSuite", available: false, detail: netsuiteDetail },
+  { id: "netsuite", label: "NetSuite dispatch file", available: true, detail: netsuiteDetail },
 ];
 
 type CsvStopRow = {
@@ -176,11 +177,11 @@ export const csvStopSource: StopSource = {
 
 export const netsuiteStopSource: StopSource = {
   id: "netsuite",
-  label: "NetSuite",
-  available: false,
+  label: "NetSuite dispatch file",
+  available: true,
   detail: netsuiteDetail,
   plan() {
-    throw new StopSourceError(netsuiteDetail);
+    throw new StopSourceError("Use the NetSuite page to import a Dispatch Truck Report.");
   },
 };
 

@@ -174,3 +174,37 @@ a.secondary {
   opacity: 0;
   cursor: pointer;
 }
+
+.day-log-cta {
+  margin-top: 16px;
+}
+
+.day-log-cta .primary {
+  display: inline-block;
+  width: fit-content;
+  text-decoration: none;
+  text-align: center;
+}
+
+.day-log-footer {
+  margin-top: 28px;
+  padding: 16px 18px 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.day-log-footer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.day-log-footer .primary {
+  display: inline-block;
+  width: fit-content;
+  text-decoration: none;
+  text-align: center;
+}

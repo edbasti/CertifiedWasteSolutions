@@ -217,7 +217,7 @@ export function LogPage() {
       <header className="field-topbar">
         <div>
           <p className="eyebrow">Driver</p>
-          <h1>Driver log</h1>
+          <h1>Independent Driver Log</h1>
         </div>
         <div className="top-actions">
           <span>
@@ -231,9 +231,12 @@ export function LogPage() {
       <main className="content log">
         <div className="page-heading">
           <div>
-            <p className="eyebrow">End of day</p>
-            <h2>Driver log</h2>
-            <p className="lede">Fill ticket lines, then submit when the day is complete.</p>
+            <p className="eyebrow">End of day paperwork</p>
+            <h2>Independent Driver Log</h2>
+            <p className="lede">
+              Choose port or non-port, enter ticket lines and prices, then submit. The office reviews this under Driver
+              Logs — not under Reports.
+            </p>
           </div>
           <Link className="secondary" to={`/day?date=${date}`}>
             ← Back to stops
@@ -249,7 +252,7 @@ export function LogPage() {
             setParams({ date: event.target.value });
           }}
         />
-        <label htmlFor="log-type">Log type</label>
+        <label htmlFor="log-type">Which Independent Driver Log?</label>
         <select
           id="log-type"
           value={logType}
@@ -381,7 +384,7 @@ export function LogPage() {
               Save draft
             </button>
             <button className="primary" type="button" disabled={busy} onClick={() => void submit()}>
-              Submit log
+              Submit Independent Driver Log
             </button>
           </div>
         )}

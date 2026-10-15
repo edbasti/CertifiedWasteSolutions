@@ -43,7 +43,7 @@ describe("route assignment", () => {
 
     const sources = await app.request("/api/route-sources", { headers: { cookie: manager } });
     const sourceBody = (await sources.json()) as { sources: { id: string; available: boolean }[] };
-    expect(sourceBody.sources.find((source) => source.id === "netsuite")?.available).toBe(false);
+    expect(sourceBody.sources.find((source) => source.id === "netsuite")?.available).toBe(true);
     const netsuite = await app.request("/api/routes/netsuite", {
       method: "POST",
       headers: { cookie: manager },

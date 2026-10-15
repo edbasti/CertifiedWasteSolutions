@@ -8,6 +8,8 @@ import type {
   DriverLog,
   DriverLogLine,
   CompletedStopReport,
+  DispatchImportPreview,
+  DispatchImportRow,
   InvoiceRecord,
   LogSummary,
   NetSuiteConnection,
@@ -247,6 +249,27 @@ export function sendInvoice(invoiceId: string) {
 
 export function loadNetSuite() {
   return request<NetSuiteConnection>("/api/netsuite");
+}
+
+export async function previewNetSuiteDispatch(file: File) {
+  const body = new FormData();
+  body.set("file", file);
+  return request<DispatchImportPreview>("/api/netsuite/dispatch/preview", {
+    method: "POST",
+    body,
+  });
+}
+
+export function importNetSuiteDispatch(rows: DispatchImportRow[], assignments: Record<string, string>) {
+  return request<RouteImportResult>("/api/netsuite/dispatch/import", {
+    method: "POST",
+    body: JSON.stringify({ rows, assignments }),
+  });
+}
+
+export function exportNetSuiteDispatchUrl(from: string, to: string, format: "csv" | "xlsx") {
+  const params = new URLSearchParams({ from, to, format });
+  return `/api/netsuite/dispatch/export?${params.toString()}`;
 }
 
 export function loadStopReport(filters: { driver: string; customer: string; from: string; to: string }) {

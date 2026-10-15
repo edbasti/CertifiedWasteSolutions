@@ -35,8 +35,8 @@ const sectionMeta: Record<PortalSection, { eyebrow: string; title: string; lede:
   },
   logs: {
     eyebrow: "Digital paperwork",
-    title: "Driver logs",
-    lede: "Submitted logs are locked and ready for review.",
+    title: "Independent Driver Logs",
+    lede: "Submitted Independent Driver Logs (port / non-port) wait here for review and invoicing.",
   },
   invoices: {
     eyebrow: "Accounting",
@@ -136,12 +136,10 @@ export function PortalPage() {
                 <span>Drivers</span>
               </button>
             ) : null}
-            {isAdmin ? (
-              <button type="button" className={section === "netsuite" ? "active" : undefined} onClick={() => go("netsuite")}>
-                <span aria-hidden="true">⬡</span>
-                <span>NetSuite</span>
-              </button>
-            ) : null}
+            <button type="button" className={section === "netsuite" ? "active" : undefined} onClick={() => go("netsuite")}>
+              <span aria-hidden="true">⬡</span>
+              <span>NetSuite</span>
+            </button>
           </nav>
         </div>
         <div className="sidebar-bottom">
@@ -249,7 +247,7 @@ export function PortalPage() {
               <DriverAdmin />
             </>
           ) : null}
-          {section === "netsuite" && isAdmin ? (
+          {section === "netsuite" ? (
             <>
               <div className="page-heading">
                 <div>

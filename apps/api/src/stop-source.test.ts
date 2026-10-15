@@ -15,8 +15,8 @@ describe("stop sources", () => {
     });
   });
 
-  it("leaves NetSuite unconnected", () => {
-    expect(netsuiteStopSource.available).toBe(false);
+  it("points NetSuite imports at the dispatch file workflow", () => {
+    expect(netsuiteStopSource.available).toBe(true);
     expect(() => netsuiteStopSource.plan("")).toThrow(StopSourceError);
   });
 });

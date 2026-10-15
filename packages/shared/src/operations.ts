@@ -59,6 +59,46 @@ export type RouteImportResult = {
   errors: { line: number; message: string }[];
 };
 
+/** One stop row from a NetSuite Dispatch Truck Report (after parse). */
+export type DispatchImportRow = {
+  line: number;
+  driverName: string;
+  driverEmail: string;
+  inOut: string;
+  dispatchNumber: string;
+  run: number | null;
+  stop: number | null;
+  serviceDate: string;
+  customerName: string;
+  address: string;
+  city: string;
+  destination: string;
+  commodity: string;
+  containerType: string;
+  containerQty: string;
+  action: string;
+  notes: string;
+  dispatchType: string;
+  priority: string;
+  dispatchedBy: string;
+  pickupDescription: string;
+  sequence: number;
+};
+
+export type DispatchDriverMatch = {
+  driverName: string;
+  driverId: string | null;
+  driverEmail: string | null;
+  matchedBy: "email" | "name" | "none";
+  stopCount: number;
+};
+
+export type DispatchImportPreview = {
+  rows: DispatchImportRow[];
+  drivers: DispatchDriverMatch[];
+  errors: { line: number; message: string }[];
+};
+
 export type StopSourceInfo = {
   id: RouteSource;
   label: string;
@@ -166,14 +206,15 @@ export type NetSuiteSearchColumn = {
 };
 
 export type NetSuiteConnection = {
-  connected: false;
-  mode: "csv";
-  message: "CSV only, NetSuite not connected.";
+  connected: boolean;
+  mode: "dispatch_file";
+  message: string;
   credentials: NetSuiteCredentialSlot[];
   savedSearch: {
     id: string;
     columns: NetSuiteSearchColumn[];
   };
+  dispatchColumns: string[];
 };
 
 export const logTypes = ["port", "non_port"] as const;

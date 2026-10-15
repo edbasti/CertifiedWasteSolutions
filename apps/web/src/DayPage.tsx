@@ -160,10 +160,10 @@ export function DayPage() {
           <div>
             <p className="eyebrow">Route day</p>
             <h2>Good morning, {user?.name?.split(" ")[0] ?? "driver"}</h2>
-            <p className="lede">One status at a time — notes and photos stay with each stop.</p>
+            <p className="lede">Finish your stops, then fill the Independent Driver Log for billing.</p>
           </div>
-          <Link className="primary" to={`/log?date=${date}`}>
-            Review &amp; submit driver log →
+          <Link className="secondary" to={`/log?date=${date}`}>
+            Independent Driver Log →
           </Link>
         </div>
         <RouteNotices
@@ -229,8 +229,18 @@ export function DayPage() {
               <button className="primary" type="button" disabled={busy} onClick={() => void getStarted()}>
                 Get started
               </button>
-            ) : stops.length > 0 ? (
-              <p className="notice">All stops are complete.</p>
+            ) : null}
+            {stops.length > 0 && completed === stops.length ? (
+              <section className="card stack day-log-cta">
+                <h2>All stops are complete</h2>
+                <p className="lede">
+                  Next step: fill your <strong>Independent Driver Log</strong> (port or non-port) with ticket lines, then
+                  submit it so the office can invoice.
+                </p>
+                <Link className="primary" to={`/log?date=${date}`}>
+                  Open Independent Driver Log →
+                </Link>
+              </section>
             ) : null}
             <div className="stop-list">
               {stops.map((stop, index) => (
@@ -289,6 +299,12 @@ export function DayPage() {
             </div>
           </>
         )}
+        <div className="day-log-footer">
+          <p>When the route is done, submit your Independent Driver Log for this date.</p>
+          <Link className="primary" to={`/log?date=${date}`}>
+            Independent Driver Log →
+          </Link>
+        </div>
       </main>
     </div>
   );

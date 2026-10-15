@@ -201,14 +201,16 @@ export function LogsPanel() {
 
   return (
     <section className="card stack">
-      <h2>Submitted logs</h2>
+      <h2>Submitted Independent Driver Logs</h2>
       <p className="lede">
-        Drafts stay with the driver until they choose Submit log. For finished invoices, use the Invoices menu. Stop
-        notes and photos are under Routes &amp; Stops and Reports.
+        Drivers fill these after their stops (Independent Driver Log — port or non-port), then choose Submit. Drafts stay
+        on the driver side until then. Finished invoices are under Invoices. Stop notes/photos are under Routes &amp;
+        Stops and Reports — not here.
       </p>
       {logs.length === 0 ? (
         <p className="lede">
-          No submitted driver logs yet. When a driver submits a log, it appears here for review and invoicing.
+          No submitted Independent Driver Logs yet. Sign in as a driver → finish stops → open Independent Driver Log →
+          Submit. Then it appears here for review.
         </p>
       ) : null}
       <ul className="driver-list">
