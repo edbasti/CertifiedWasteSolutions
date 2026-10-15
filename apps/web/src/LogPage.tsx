@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { appName, logFieldMap, logTypeLabels, logTypes, type DriverLog, type LogField, type LogType } from "@cws/shared";
+import { logFieldMap, logTypeLabels, logTypes, type DriverLog, type LogField, type LogType } from "@cws/shared";
 import { ApiError, loadLog, saveLog, submitLog } from "./api";
 import { useSession } from "./session";
 import "./log.css";
@@ -213,24 +213,32 @@ export function LogPage() {
   }
 
   return (
-    <div className="shell">
-      <header className="topbar">
-        <strong>{appName}</strong>
-        <div className="topbar-actions">
+    <div className="field-shell">
+      <header className="field-topbar">
+        <div>
+          <p className="eyebrow">Driver</p>
+          <h1>Driver log</h1>
+        </div>
+        <div className="top-actions">
           <span>
             {user?.name} · {user?.role}
           </span>
-          <button type="button" onClick={() => void logout()}>
+          <button className="secondary" type="button" onClick={() => void logout()}>
             Sign out
           </button>
         </div>
       </header>
       <main className="content log">
-        <p className="eyebrow">Driver</p>
-        <h1>Driver log</h1>
-        <Link className="secondary" to={`/day?date=${date}`}>
-          Back to stops
-        </Link>
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow">End of day</p>
+            <h2>Driver log</h2>
+            <p className="lede">Fill ticket lines, then submit when the day is complete.</p>
+          </div>
+          <Link className="secondary" to={`/day?date=${date}`}>
+            ← Back to stops
+          </Link>
+        </div>
         <label htmlFor="log-date">Service date</label>
         <input
           id="log-date"

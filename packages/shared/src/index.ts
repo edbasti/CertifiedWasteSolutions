@@ -62,4 +62,13 @@ export const brand = {
   joustBlue3: "#3B7CB7",
   silverfish: "#8D97AD",
   crystal: "#EFEFEF",
+  /** Soft page canvas used by the operations UI (derived from Crystal). */
+  canvas: "#F4F7FB",
+  /** Soft Forest Green wash for status chips and highlights. */
+  forestSoft: "#E8F4E4",
+  /** Soft Joust Blue wash for in-progress status. */
+  joustSoft: "#E5F2FE",
+  /** Attention amber used sparingly for warnings. */
+  amber: "#BC7314",
+  amberSoft: "#FFF2D9",
 } as const;

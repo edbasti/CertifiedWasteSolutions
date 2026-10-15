@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { logFieldMap, logTypeLabels, type DriverLog, type DriverLogLine, type LogSummary } from "@cws/shared";
-import { ApiError, completeLog, correctLog, listLogsForReview, readLog, searchInvoices, sendInvoice } from "./api";
-import type { InvoiceRecord } from "@cws/shared";
+import { ApiError, completeLog, correctLog, listLogsForReview, readLog, sendInvoice } from "./api";
 
 const statusLabels: Record<DriverLog["status"], string> = {
   draft: "Draft",
@@ -97,9 +96,6 @@ export function LogsPanel() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [driverQuery, setDriverQuery] = useState("");
-  const [dateQuery, setDateQuery] = useState("");
-  const [matches, setMatches] = useState<InvoiceRecord[]>([]);
 
   async function refresh(selectId?: string) {
     const result = await listLogsForReview();
@@ -183,7 +179,6 @@ export function LogsPanel() {
     setNotice(null);
     try {
       const result = await sendInvoice(invoiceId);
-      setMatches((current) => current.map((item) => (item.id === result.invoice.id ? result.invoice : item)));
       setSelected((current) =>
         current?.invoice?.id === result.invoice.id
           ? {
@@ -204,60 +199,16 @@ export function LogsPanel() {
     }
   }
 
-  async function search() {
-    setError(null);
-    try {
-      const result = await searchInvoices(driverQuery, dateQuery);
-      setMatches(result.invoices);
-      if (result.invoices.length === 0) {
-        setNotice("No invoices match that driver and date.");
-      }
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : "Could not search invoices.");
-    }
-  }
-
   return (
     <section className="card stack">
-      <h2>Driver logs</h2>
-      <p className="lede">
-        This is where office staff review logs drivers submitted for billing. Drafts stay on the driver side until they
-        choose Submit log. Stop activity (notes and photos) is under Routes and Stop reports — not here.
-      </p>
-      <h2>Find an invoice</h2>
-      <label htmlFor="invoice-driver">Driver</label>
-      <input id="invoice-driver" value={driverQuery} onChange={(event) => setDriverQuery(event.target.value)} />
-      <label htmlFor="invoice-date">Service date</label>
-      <input id="invoice-date" type="date" value={dateQuery} onChange={(event) => setDateQuery(event.target.value)} />
-      <button className="secondary" type="button" onClick={() => void search()}>
-        Search
-      </button>
-      {matches.length > 0 ? (
-        <ul className="driver-list">
-          {matches.map((invoice) => (
-            <li key={invoice.id}>
-              <div>
-                <strong>
-                  {invoice.invoiceNumber} · {invoice.driverName}
-                </strong>
-                <span>{invoice.serviceDate}</span>
-              </div>
-              <InvoiceFiles
-                invoiceId={invoice.id}
-                logId={invoice.logId}
-                sentToAccountingAt={invoice.sentToAccountingAt}
-                busy={busy}
-                onSend={(invoiceId) => void send(invoiceId)}
-              />
-            </li>
-          ))}
-        </ul>
-      ) : null}
       <h2>Submitted logs</h2>
+      <p className="lede">
+        Drafts stay with the driver until they choose Submit log. For finished invoices, use the Invoices menu. Stop
+        notes and photos are under Routes &amp; Stops and Reports.
+      </p>
       {logs.length === 0 ? (
         <p className="lede">
-          No submitted driver logs yet. Sign in as a driver, open the driver log for a service date, fill it in, and
-          choose Submit log — then it appears here for review and invoicing.
+          No submitted driver logs yet. When a driver submits a log, it appears here for review and invoicing.
         </p>
       ) : null}
       <ul className="driver-list">

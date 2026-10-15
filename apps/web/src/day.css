@@ -13,27 +13,78 @@ a.secondary {
   text-decoration: none;
 }
 
+.driver-progress {
+  margin-top: 16px;
+  padding: 16px 18px;
+}
+
+.stop-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 9px;
+}
+
+.stop-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  transition: 0.2s ease;
+}
+
+.stop-card:hover {
+  border-color: #9bc4a8;
+  box-shadow: 0 5px 12px rgba(1, 37, 86, 0.06);
+}
+
 .stop-open {
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
   padding: 0;
+  width: 100%;
+}
+
+.stop-top {
+  display: flex;
+  gap: 11px;
+  align-items: start;
+}
+
+.stop-number {
+  width: 27px;
+  height: 27px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--forest-soft);
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.stop-card h3 {
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+
+.stop-top .status {
+  margin-left: auto;
+}
+
+.stop-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 38px;
+  margin-top: 13px;
 }
 
 .day-focus h3 {
   margin: 12px 0 0;
   font-size: 14px;
-}
-
-.day-progress {
-  margin: 8px 0 0;
-  color: var(--silverfish);
-  font-size: 14px;
-}
-
-.day-progress b {
-  color: var(--sable);
 }
 
 .notices {
@@ -79,38 +130,19 @@ a.secondary {
 
 .pickup {
   margin: 0;
-  padding: 12px;
-  border-radius: 8px;
-  background: #e7f3fe;
   color: var(--space-blue);
+  font-size: 13px;
   font-weight: 700;
 }
 
 .status-button {
-  justify-self: start;
-}
-
-.history {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.history li {
-  color: var(--silverfish);
-  font-size: 13px;
-}
-
-.photo-row,
-.note-list {
-  display: grid;
-  gap: 8px;
+  width: fit-content;
 }
 
 .photo-row {
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
 }
 
 .photo-row img {
@@ -121,18 +153,24 @@ a.secondary {
   background: var(--crystal);
 }
 
+.note-list {
+  display: grid;
+  gap: 8px;
+}
+
 .note-list p {
   margin: 0;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
+  font-size: 13px;
 }
 
 .file-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .file-button input {
-  display: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }

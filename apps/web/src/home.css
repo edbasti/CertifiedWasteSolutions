@@ -1,7 +1,7 @@
 .home {
   min-height: 100vh;
   overflow: hidden;
-  background: #f6f8fb;
+  background: #f7faf8;
   color: var(--sable);
 }
 
@@ -37,7 +37,7 @@
   display: grid;
   place-items: center;
   color: #fff;
-  background: var(--space-blue);
+  background: var(--forest-green);
   font-size: 22px;
   font-weight: 800;
   box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.16);
@@ -51,7 +51,7 @@
 
 .home-brand span {
   display: block;
-  color: var(--joust-blue-2);
+  color: var(--forest-green);
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -70,24 +70,24 @@
 }
 
 .home-nav-links a:hover {
-  color: var(--joust-blue-2);
+  color: var(--forest-green);
 }
 
 .home-login {
-  border: 1px solid #c5d7ea;
+  border: 1px solid #b9d8c9;
   background: rgba(255, 255, 255, 0.8);
-  color: var(--space-blue);
+  color: var(--forest-green);
   border-radius: 8px;
   padding: 10px 15px;
   font-size: 12px;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgba(1, 37, 86, 0.06);
+  box-shadow: 0 4px 12px rgba(81, 159, 68, 0.08);
 }
 
 .home-login:hover {
   color: #fff;
-  background: var(--joust-blue-2);
-  border-color: var(--joust-blue-2);
+  background: var(--forest-green);
+  border-color: var(--forest-green);
 }
 
 .home-hero {
@@ -109,7 +109,7 @@
   border-radius: 50%;
   top: -140px;
   right: -220px;
-  background: radial-gradient(circle, rgba(81, 170, 250, 0.22) 0 17%, rgba(24, 142, 244, 0.06) 48%, transparent 70%);
+  background: radial-gradient(circle, rgba(81, 159, 68, 0.16) 0 17%, rgba(24, 142, 244, 0.06) 48%, transparent 70%);
   pointer-events: none;
   animation: home-breathe 8s ease-in-out infinite;
 }
@@ -123,7 +123,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--joust-blue-2);
+  color: var(--forest-green);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 1.5px;
@@ -134,7 +134,7 @@
   content: "";
   width: 23px;
   height: 2px;
-  background: var(--joust-blue-1);
+  background: #7cbc72;
 }
 
 .hero-copy h1 {
@@ -147,7 +147,7 @@
 }
 
 .hero-copy h1 em {
-  color: var(--joust-blue-2);
+  color: var(--forest-green);
   font-style: normal;
 }
 
@@ -171,13 +171,13 @@
 
 .hero-cta {
   border-radius: 9px;
-  background: var(--joust-blue-2);
+  background: var(--forest-green);
   color: #fff;
   padding: 14px 18px;
   font-size: 12px;
   font-weight: 900;
   text-decoration: none;
-  box-shadow: 0 12px 23px rgba(24, 142, 244, 0.28);
+  box-shadow: 0 12px 23px rgba(81, 159, 68, 0.24);
 }
 
 .hero-cta:hover {
@@ -185,7 +185,7 @@
 }
 
 .hero-ghost {
-  color: var(--joust-blue-2);
+  color: var(--forest-green);
   font-size: 12px;
   font-weight: 900;
   padding: 12px 4px;
@@ -457,8 +457,8 @@
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  background: #e7f2fb;
-  color: var(--joust-blue-2);
+  background: var(--forest-soft);
+  color: var(--forest-green);
   font-size: 8px;
   font-weight: 900;
 }
@@ -602,7 +602,7 @@
 
 .feature-card {
   padding: 23px;
-  border: 1px solid #dce6f0;
+  border: 1px solid #dcebe3;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 13px;
 }
@@ -616,8 +616,8 @@
   width: 37px;
   height: 37px;
   border-radius: 10px;
-  background: #e7f3fe;
-  color: var(--joust-blue-2);
+  background: var(--forest-soft);
+  color: var(--forest-green);
   font-size: 17px;
   margin-bottom: 17px;
 }

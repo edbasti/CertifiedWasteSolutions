@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
-import { appName, type AppNotification, type DriverDay, type DriverStop, type StopStatus } from "@cws/shared";
+import { type AppNotification, type DriverDay, type DriverStop, type StopStatus } from "@cws/shared";
 import {
   addStopNote,
   ApiError,
@@ -140,21 +140,32 @@ export function DayPage() {
   }
 
   return (
-    <div className="shell">
-      <header className="topbar">
-        <strong>{appName}</strong>
-        <div className="topbar-actions">
+    <div className="field-shell">
+      <header className="field-topbar">
+        <div>
+          <p className="eyebrow">Driver</p>
+          <h1>Today&apos;s stops</h1>
+        </div>
+        <div className="top-actions">
           <span>
             {user?.name} · {user?.role}
           </span>
-          <button type="button" onClick={() => void logout()}>
+          <button className="secondary" type="button" onClick={() => void logout()}>
             Sign out
           </button>
         </div>
       </header>
       <main className="content day">
-        <p className="eyebrow">Driver</p>
-        <h1>Today's stops</h1>
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow">Route day</p>
+            <h2>Good morning, {user?.name?.split(" ")[0] ?? "driver"}</h2>
+            <p className="lede">One status at a time — notes and photos stay with each stop.</p>
+          </div>
+          <Link className="primary" to={`/log?date=${date}`}>
+            Review &amp; submit driver log →
+          </Link>
+        </div>
         <RouteNotices
           onOpen={(serviceDate) => {
             setFocusId(null);
@@ -171,15 +182,24 @@ export function DayPage() {
             setDate(event.target.value);
           }}
         />
-        <Link className="secondary" to={`/log?date=${date}`}>
-          Driver log
-        </Link>
-        <p className="day-progress">
-          <b>
-            {completed} of {stops.length}
-          </b>{" "}
-          {stops.length === 1 ? "stop" : "stops"} complete
-        </p>
+        <div className="driver-progress card">
+          <div className="progress-row">
+            <span>
+              <b>
+                {completed} of {stops.length}
+              </b>{" "}
+              {stops.length === 1 ? "stop" : "stops"} complete
+            </span>
+            <b>{stops.length === 0 ? "0%" : `${Math.round((completed / stops.length) * 100)}%`}</b>
+          </div>
+          <div className="progress">
+            <span
+              style={{
+                width: `${stops.length === 0 ? 0 : Math.round((completed / stops.length) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
         {error ? (
           <p className="form-error" role="alert">
             {error}
@@ -212,46 +232,61 @@ export function DayPage() {
             ) : stops.length > 0 ? (
               <p className="notice">All stops are complete.</p>
             ) : null}
-            <ul className="driver-list">
+            <div className="stop-list">
               {stops.map((stop, index) => (
-                <li key={stop.id}>
+                <article className="stop-card" key={stop.id}>
                   <button className="stop-open" type="button" onClick={() => setFocusId(stop.id)}>
-                    <strong>
-                      {stop.sequence}. {stop.customerName}
-                    </strong>
-                    <span>{stop.address}</span>
-                    <span>{stop.pickupDescription}</span>
-                    <span className="badge">{statusLabels[stop.status]}</span>
+                    <div className="stop-top">
+                      <div className="stop-number">{stop.sequence}</div>
+                      <div>
+                        <h3>{stop.customerName}</h3>
+                        <span className="address">{stop.address}</span>
+                        <span className="address">{stop.pickupDescription}</span>
+                      </div>
+                      <span
+                        className={
+                          stop.status === "completed"
+                            ? "status complete"
+                            : stop.status === "en_route"
+                              ? "status enroute"
+                              : "status pending"
+                        }
+                      >
+                        {statusLabels[stop.status]}
+                      </span>
+                    </div>
                   </button>
-                  <div className="row-actions">
-                    <button
-                      className="secondary"
-                      type="button"
-                      disabled={busy || index === 0}
-                      onClick={() => {
-                        const ids = stops.map((item) => item.id);
-                        [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-                        void run(() => reorderDay(date, ids));
-                      }}
-                    >
-                      Move up
-                    </button>
-                    <button
-                      className="secondary"
-                      type="button"
-                      disabled={busy || index === stops.length - 1}
-                      onClick={() => {
-                        const ids = stops.map((item) => item.id);
-                        [ids[index + 1], ids[index]] = [ids[index], ids[index + 1]];
-                        void run(() => reorderDay(date, ids));
-                      }}
-                    >
-                      Move down
-                    </button>
+                  <div className="stop-bottom">
+                    <div className="row-actions">
+                      <button
+                        className="secondary"
+                        type="button"
+                        disabled={busy || index === 0}
+                        onClick={() => {
+                          const ids = stops.map((item) => item.id);
+                          [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+                          void run(() => reorderDay(date, ids));
+                        }}
+                      >
+                        Move up
+                      </button>
+                      <button
+                        className="secondary"
+                        type="button"
+                        disabled={busy || index === stops.length - 1}
+                        onClick={() => {
+                          const ids = stops.map((item) => item.id);
+                          [ids[index + 1], ids[index]] = [ids[index], ids[index + 1]];
+                          void run(() => reorderDay(date, ids));
+                        }}
+                      >
+                        Move down
+                      </button>
+                    </div>
                   </div>
-                </li>
+                </article>
               ))}
-            </ul>
+            </div>
           </>
         )}
       </main>

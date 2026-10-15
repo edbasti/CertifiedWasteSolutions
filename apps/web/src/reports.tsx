@@ -76,8 +76,8 @@ export function ReportsPanel() {
     <section className="card stack">
       <h2>Completed stops</h2>
       <p className="lede">
-        Operational report of finished route stops (timing, notes, photos). For driver billing submissions, use the
-        Driver logs tab instead.
+        Operational report of finished route stops (timing, notes, photos). For driver billing submissions, open Driver
+        Logs.
       </p>
       <label htmlFor="report-driver">Driver</label>
       <input id="report-driver" value={driver} onChange={(event) => setDriver(event.target.value)} />

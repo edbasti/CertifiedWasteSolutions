@@ -1,7 +1,10 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { appName, type DriverAccount, type ImportResult } from "@cws/shared";
+import { Link } from "react-router";
+import { type DriverAccount, type ImportResult } from "@cws/shared";
 import { ApiError, createDriver, importDrivers, listDrivers, resetDriverAccess, updateDriver } from "./api";
 import { CustomersPanel } from "./customers";
+import { DashboardPanel } from "./Dashboard";
+import { InvoicesPanel } from "./Invoices";
 import { LogsPanel } from "./logs-review";
 import { Modal } from "./Modal";
 import { NetSuitePanel } from "./netsuite";
@@ -9,58 +12,257 @@ import { ReportsPanel } from "./reports";
 import { RoutesPanel } from "./routes";
 import { useSession } from "./session";
 
+type PortalSection =
+  | "dashboard"
+  | "routes"
+  | "logs"
+  | "invoices"
+  | "reports"
+  | "customers"
+  | "drivers"
+  | "netsuite";
+
+const sectionMeta: Record<PortalSection, { eyebrow: string; title: string; lede: string }> = {
+  dashboard: {
+    eyebrow: "Operations portal",
+    title: "Today's overview",
+    lede: "Watch live route progress across your team.",
+  },
+  routes: {
+    eyebrow: "Operations",
+    title: "Routes & stops",
+    lede: "Monitor every stop and status change as it happens.",
+  },
+  logs: {
+    eyebrow: "Digital paperwork",
+    title: "Driver logs",
+    lede: "Submitted logs are locked and ready for review.",
+  },
+  invoices: {
+    eyebrow: "Accounting",
+    title: "Invoices",
+    lede: "Every invoice is generated from a submitted driver log.",
+  },
+  reports: {
+    eyebrow: "Insights",
+    title: "Reports & analytics",
+    lede: "Measure completed stops, route timing, and driver activity.",
+  },
+  customers: {
+    eyebrow: "Directory",
+    title: "Customers & locations",
+    lede: "Manage service locations and assignments.",
+  },
+  drivers: {
+    eyebrow: "Team access",
+    title: "Drivers",
+    lede: "Create accounts, reset access, and review route activity.",
+  },
+  netsuite: {
+    eyebrow: "Integrations",
+    title: "NetSuite",
+    lede: "Connection status and mapping for future stop imports.",
+  },
+};
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export function PortalPage() {
   const { user, logout } = useSession();
   const isAdmin = user?.role === "admin";
-  const [section, setSection] = useState<"customers" | "drivers" | "routes" | "logs" | "reports" | "netsuite">("customers");
+  const [section, setSection] = useState<PortalSection>("dashboard");
+  const [navOpen, setNavOpen] = useState(false);
+  const meta = sectionMeta[section];
+
+  function go(next: PortalSection) {
+    setSection(next);
+    setNavOpen(false);
+  }
 
   return (
-    <div className="shell">
-      <header className="topbar">
-        <strong>{appName}</strong>
-        <div className="topbar-actions">
-          <span>
-            {user?.name} · {user?.role}
-          </span>
-          <button type="button" onClick={() => void logout()}>
+    <div className={`app-shell${navOpen ? " nav-open" : ""}`}>
+      <aside className="sidebar" aria-label="Portal navigation">
+        <div className="brand">
+          <div className="brand-mark" aria-hidden="true">
+            C
+          </div>
+          <div>
+            <strong>Certified Waste</strong>
+            <span>Solutions</span>
+          </div>
+        </div>
+        <div>
+          <div className="nav-label">Workspace</div>
+          <nav className="side-nav">
+            <button type="button" className={section === "dashboard" ? "active" : undefined} onClick={() => go("dashboard")}>
+              <span aria-hidden="true">▦</span>
+              <span>Dashboard</span>
+            </button>
+            <button type="button" className={section === "routes" ? "active" : undefined} onClick={() => go("routes")}>
+              <span aria-hidden="true">⌁</span>
+              <span>Routes &amp; Stops</span>
+            </button>
+            <button type="button" className={section === "logs" ? "active" : undefined} onClick={() => go("logs")}>
+              <span aria-hidden="true">▤</span>
+              <span>Driver Logs</span>
+            </button>
+            <button type="button" className={section === "invoices" ? "active" : undefined} onClick={() => go("invoices")}>
+              <span aria-hidden="true">▧</span>
+              <span>Invoices</span>
+            </button>
+            <button type="button" className={section === "reports" ? "active" : undefined} onClick={() => go("reports")}>
+              <span aria-hidden="true">◒</span>
+              <span>Reports</span>
+            </button>
+          </nav>
+        </div>
+        <div>
+          <div className="nav-label">Manage</div>
+          <nav className="side-nav">
+            <button type="button" className={section === "customers" ? "active" : undefined} onClick={() => go("customers")}>
+              <span aria-hidden="true">♧</span>
+              <span>Customers</span>
+            </button>
+            {isAdmin ? (
+              <button type="button" className={section === "drivers" ? "active" : undefined} onClick={() => go("drivers")}>
+                <span aria-hidden="true">♙</span>
+                <span>Drivers</span>
+              </button>
+            ) : null}
+            {isAdmin ? (
+              <button type="button" className={section === "netsuite" ? "active" : undefined} onClick={() => go("netsuite")}>
+                <span aria-hidden="true">⬡</span>
+                <span>NetSuite</span>
+              </button>
+            ) : null}
+          </nav>
+        </div>
+        <div className="sidebar-bottom">
+          <div className="profile">
+            <div className="avatar">{initials(user?.name ?? "U")}</div>
+            <div>
+              <b>{user?.name}</b>
+              <small>{user?.role === "admin" ? "Administrator" : "Manager"}</small>
+            </div>
+          </div>
+          <button className="sidebar-signout" type="button" onClick={() => void logout()}>
             Sign out
           </button>
         </div>
-      </header>
-      <main className="content directory">
-        <p className="eyebrow">Portal</p>
-        <h1>Operations</h1>
-        <div className="tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={section === "customers"} onClick={() => setSection("customers")}>
-            Locations
-          </button>
-          {isAdmin ? (
-            <button type="button" role="tab" aria-selected={section === "drivers"} onClick={() => setSection("drivers")}>
-              Drivers
+      </aside>
+
+      {navOpen ? <button className="nav-backdrop" type="button" aria-label="Close menu" onClick={() => setNavOpen(false)} /> : null}
+
+      <div className="main">
+        <header className="portal-topbar">
+          <div className="portal-topbar-copy">
+            <button className="menu-toggle" type="button" aria-label="Open menu" onClick={() => setNavOpen(true)}>
+              ☰
             </button>
+            <div>
+              <p className="eyebrow">{meta.eyebrow}</p>
+              <h1>{meta.title}</h1>
+            </div>
+          </div>
+          <div className="top-actions">
+            <Link className="portal-home" to="/">
+              ← Homepage
+            </Link>
+            <div className="date-pill">
+              {new Date().toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+        </header>
+
+        <section className="portal-content">
+          {section === "dashboard" ? <DashboardPanel onOpenRoutes={() => go("routes")} /> : null}
+          {section === "routes" ? (
+            <>
+              <div className="page-heading">
+                <div>
+                  <p className="eyebrow">{meta.eyebrow}</p>
+                  <h2>{meta.title}</h2>
+                  <p className="lede">{meta.lede}</p>
+                </div>
+              </div>
+              <RoutesPanel />
+            </>
           ) : null}
-          {isAdmin ? (
-            <button type="button" role="tab" aria-selected={section === "netsuite"} onClick={() => setSection("netsuite")}>
-              NetSuite
-            </button>
+          {section === "logs" ? (
+            <>
+              <div className="page-heading">
+                <div>
+                  <p className="eyebrow">{meta.eyebrow}</p>
+                  <h2>{meta.title}</h2>
+                  <p className="lede">{meta.lede}</p>
+                </div>
+              </div>
+              <LogsPanel />
+            </>
           ) : null}
-          <button type="button" role="tab" aria-selected={section === "routes"} onClick={() => setSection("routes")}>
-            Routes
-          </button>
-          <button type="button" role="tab" aria-selected={section === "logs"} onClick={() => setSection("logs")}>
-            Driver logs
-          </button>
-          <button type="button" role="tab" aria-selected={section === "reports"} onClick={() => setSection("reports")}>
-            Stop reports
-          </button>
-        </div>
-        {section === "drivers" && isAdmin ? <DriverAdmin /> : null}
-        {section === "netsuite" && isAdmin ? <NetSuitePanel /> : null}
-        {section === "customers" ? <CustomersPanel /> : null}
-        {section === "routes" ? <RoutesPanel /> : null}
-        {section === "logs" ? <LogsPanel /> : null}
-        {section === "reports" ? <ReportsPanel /> : null}
-      </main>
+          {section === "invoices" ? <InvoicesPanel /> : null}
+          {section === "reports" ? (
+            <>
+              <div className="page-heading">
+                <div>
+                  <p className="eyebrow">{meta.eyebrow}</p>
+                  <h2>{meta.title}</h2>
+                  <p className="lede">{meta.lede}</p>
+                </div>
+              </div>
+              <ReportsPanel />
+            </>
+          ) : null}
+          {section === "customers" ? (
+            <>
+              <div className="page-heading">
+                <div>
+                  <p className="eyebrow">{meta.eyebrow}</p>
+                  <h2>{meta.title}</h2>
+                  <p className="lede">{meta.lede}</p>
+                </div>
+              </div>
+              <CustomersPanel />
+            </>
+          ) : null}
+          {section === "drivers" && isAdmin ? (
+            <>
+              <div className="page-heading">
+                <div>
+                  <p className="eyebrow">{meta.eyebrow}</p>
+                  <h2>{meta.title}</h2>
+                  <p className="lede">{meta.lede}</p>
+                </div>
+              </div>
+              <DriverAdmin />
+            </>
+          ) : null}
+          {section === "netsuite" && isAdmin ? (
+            <>
+              <div className="page-heading">
+                <div>
+                  <p className="eyebrow">{meta.eyebrow}</p>
+                  <h2>{meta.title}</h2>
+                  <p className="lede">{meta.lede}</p>
+                </div>
+              </div>
+              <NetSuitePanel />
+            </>
+          ) : null}
+        </section>
+      </div>
     </div>
   );
 }
