@@ -124,13 +124,13 @@ function StopCard({
 
   return (
     <article className="stop-card">
-      <div className="stop-top">
+      <div className="stop-row">
         <Link className="stop-open" to={stopPath}>
-          <div className="stop-number">{stop.sequence}</div>
-          <div className="stop-copy">
-            <h3>{stop.customerName}</h3>
-            <span className="pickup-line">{stop.pickupDescription}</span>
-          </div>
+          <span className="stop-number">{stop.sequence}</span>
+          <span className="stop-copy">
+            <span className="stop-title">{stop.customerName}</span>
+            <span className="stop-meta">{stop.pickupDescription}</span>
+          </span>
           <span
             className={
               stop.status === "completed"
@@ -145,11 +145,12 @@ function StopCard({
         </Link>
         <button
           type="button"
-          className="stop-address"
+          className="stop-map-btn"
           onClick={() => setMapOpen(true)}
           aria-label={`Open map for ${stop.address}`}
+          title={stop.address}
         >
-          {stop.address}
+          Map
         </button>
         {stop.status === "not_started" ? (
           <div className="stop-reorder">
@@ -158,16 +159,18 @@ function StopCard({
               type="button"
               disabled={busy || index === 0}
               onClick={() => onReorder("up")}
+              aria-label="Move up"
             >
-              Up
+              ↑
             </button>
             <button
               className="secondary stop-reorder-btn"
               type="button"
               disabled={busy || index === total - 1}
               onClick={() => onReorder("down")}
+              aria-label="Move down"
             >
-              Down
+              ↓
             </button>
           </div>
         ) : null}
