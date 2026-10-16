@@ -18,6 +18,12 @@ const nextStatus: Record<StopStatus, StopStatus | null> = {
   completed: null,
 };
 
+const previousStatus: Record<StopStatus, StopStatus | null> = {
+  not_started: null,
+  en_route: "not_started",
+  completed: "en_route",
+};
+
 export function photoDirectory() {
   if (process.env.PHOTO_DIR) {
     return process.env.PHOTO_DIR;
@@ -173,9 +179,14 @@ export function registerDay(app: Hono<AppEnv>, db: CwsDatabase) {
     }
     const body = await readJson(c);
     const requested = body?.status;
-    const status = nextStatus[owned.stop.status];
-    if (!status || requested !== status) {
-      return c.json({ error: status ? "Update the stop one step at a time." : "This stop is already complete." }, 409);
+    const forward = nextStatus[owned.stop.status];
+    const back = previousStatus[owned.stop.status];
+    const status = requested === forward || requested === back ? (requested as StopStatus) : null;
+    if (!status) {
+      if (!forward && !back) {
+        return c.json({ error: "This stop cannot change status." }, 409);
+      }
+      return c.json({ error: "Update the stop one step at a time." }, 409);
     }
     const now = new Date().toISOString();
     await db.update(stops).set({ status }).where(eq(stops.id, owned.stop.id));

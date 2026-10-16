@@ -8,6 +8,7 @@ export function CustomersPanel() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [editing, setEditing] = useState<CustomerAccount | null>(null);
 
   async function refresh() {
@@ -51,17 +52,21 @@ export function CustomersPanel() {
 
   return (
     <>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Directory</p>
+          <h2>Customers & locations</h2>
+          <p className="lede">Manage service locations and assignments.</p>
+        </div>
+      </div>
       <div className="panel-actions">
         <button className="primary" type="button" onClick={() => setCreating(true)}>
           New location
         </button>
+        <button className="secondary" type="button" onClick={() => setImporting(true)}>
+          Import locations
+        </button>
       </div>
-      <section className="card stack">
-        <h2>Import locations</h2>
-        <p className="lede">CSV columns: name, address. Optional column: active.</p>
-        <label htmlFor="customer-csv">CSV file</label>
-        <input id="customer-csv" type="file" accept=".csv,text/csv" onChange={(event) => void onImport(event)} />
-      </section>
       {notice ? <p className="notice">{notice}</p> : null}
       {loadError ? (
         <p className="form-error" role="alert">
@@ -118,6 +123,30 @@ export function CustomersPanel() {
               void refresh();
             }}
           />
+        </Modal>
+      ) : null}
+      {importing ? (
+        <Modal title="Import locations" onClose={() => setImporting(false)}>
+          <div className="stack">
+            <p className="lede">CSV columns: name, address. Optional column: active.</p>
+            <label htmlFor="customer-csv">CSV file</label>
+            <input
+              id="customer-csv"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => {
+                void (async () => {
+                  await onImport(event);
+                  setImporting(false);
+                })();
+              }}
+            />
+            <div className="row-actions">
+              <button className="secondary" type="button" onClick={() => setImporting(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </Modal>
       ) : null}
       {editing ? (

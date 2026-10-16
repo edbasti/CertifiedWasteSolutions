@@ -78,6 +78,22 @@ describe("driver day", () => {
     expect(startedHarbor?.status).toBe("en_route");
     expect(startedHarbor?.history.at(-1)?.toStatus).toBe("en_route");
 
+    const undone = await app.request(`/api/stops/${harbor?.id}/status`, {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: alex },
+      body: JSON.stringify({ status: "not_started" }),
+    });
+    expect(undone.status).toBe(200);
+    const undoneBody = (await undone.json()) as DriverDay;
+    expect(undoneBody.stops.find((stop) => stop.id === harbor?.id)?.status).toBe("not_started");
+
+    const restarted = await app.request(`/api/stops/${harbor?.id}/status`, {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: alex },
+      body: JSON.stringify({ status: "en_route" }),
+    });
+    expect(restarted.status).toBe(200);
+
     const noted = await app.request(`/api/stops/${harbor?.id}/notes`, {
       method: "POST",
       headers: { "content-type": "application/json", cookie: alex },

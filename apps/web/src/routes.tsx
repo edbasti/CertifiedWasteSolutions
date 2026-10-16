@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import type { AssignedRoute, AssignedStop, CustomerAccount, RouteImportResult, StopSourceInfo, StopStatus } from "@cws/shared";
 import {
   addRouteStop,
@@ -25,6 +25,44 @@ function localDate() {
   return local.toISOString().slice(0, 10);
 }
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function statusClass(status: StopStatus) {
+  if (status === "completed") {
+    return "status complete";
+  }
+  if (status === "en_route") {
+    return "status enroute";
+  }
+  return "status pending";
+}
+
+function lastStatusChange(stop: AssignedStop) {
+  const last = stop.history.at(-1);
+  if (!last) {
+    return "Not changed yet";
+  }
+  return new Date(last.changedAt).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+type FlatStop = {
+  stop: AssignedStop;
+  route: AssignedRoute;
+  index: number;
+};
+
 export function RoutesPanel() {
   const [date, setDate] = useState(localDate);
   const [routes, setRoutes] = useState<AssignedRoute[]>([]);
@@ -34,6 +72,11 @@ export function RoutesPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [addingStop, setAddingStop] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [driverFilter, setDriverFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | StopStatus>("");
+  const [details, setDetails] = useState<FlatStop | null>(null);
 
   async function refresh(nextDate = date) {
     const result = await listRoutes(nextDate);
@@ -80,134 +123,164 @@ export function RoutesPanel() {
 
   const netsuite = sources.find((source) => source.id === "netsuite");
 
+  const flatStops = useMemo(
+    () =>
+      routes.flatMap((route) =>
+        route.stops.map((stop, index) => ({
+          stop,
+          route,
+          index,
+        })),
+      ),
+    [routes],
+  );
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return flatStops.filter(({ stop, route }) => {
+      if (driverFilter && route.driverUserId !== driverFilter) {
+        return false;
+      }
+      if (statusFilter && stop.status !== statusFilter) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      return (
+        stop.customerName.toLowerCase().includes(query) ||
+        stop.address.toLowerCase().includes(query) ||
+        stop.pickupDescription.toLowerCase().includes(query) ||
+        route.driverName.toLowerCase().includes(query)
+      );
+    });
+  }, [driverFilter, flatStops, search, statusFilter]);
+
   return (
     <>
-      <form
-        className="card stack"
-        onSubmit={(event) => {
-          event.preventDefault();
-        }}
-      >
-        <h2>Service date</h2>
-        <label htmlFor="route-date">Date</label>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Operations</p>
+          <h2>Routes & stops</h2>
+          <p className="lede">Monitor every stop and status change as it happens.</p>
+        </div>
+        <div className="panel-actions">
+          <button className="secondary" type="button" onClick={() => setImporting(true)}>
+            Import stops
+          </button>
+          <button className="primary" type="button" onClick={() => setAddingStop(true)}>
+            ＋ Add a stop
+          </button>
+        </div>
+      </div>
+
+      <div className="toolbar">
         <input
+          className="search"
+          type="search"
+          placeholder="⌕  Search customer or address"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <input
+          className="filter"
           id="route-date"
           type="date"
           value={date}
+          aria-label="Service date"
           onChange={(event) => {
             setNotice(null);
             setDate(event.target.value);
           }}
-          required
         />
-      </form>
-      <div className="panel-actions">
-        <button className="primary" type="button" onClick={() => setAddingStop(true)}>
-          Add a stop
-        </button>
+        <select className="filter" value={driverFilter} onChange={(event) => setDriverFilter(event.target.value)} aria-label="Driver">
+          <option value="">All drivers</option>
+          {drivers.map((driver) => (
+            <option key={driver.id} value={driver.id}>
+              {driver.name}
+            </option>
+          ))}
+        </select>
+        <select
+          className="filter"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as "" | StopStatus)}
+          aria-label="Status"
+        >
+          <option value="">All statuses</option>
+          <option value="completed">Completed</option>
+          <option value="en_route">En Route</option>
+          <option value="not_started">Not Started</option>
+        </select>
       </div>
-      <section className="card stack">
-        <h2>Import stops</h2>
-        <p className="lede">
-          CSV columns: driverEmail, serviceDate, customer, pickup. Optional columns: address, sequence. A
-          matching location supplies the address.
-        </p>
-        <label htmlFor="route-csv">CSV file</label>
-        <input id="route-csv" type="file" accept=".csv,text/csv" onChange={(event) => void onImport(event)} />
-        {netsuite?.detail ? <p className="lede">{netsuite.detail}</p> : null}
-      </section>
+
       {notice ? <p className="notice">{notice}</p> : null}
       {loadError ? (
         <p className="form-error" role="alert">
           {loadError}
         </p>
       ) : null}
-      {routes.length > 0 ? <LiveSummary routes={routes} /> : null}
-      {routes.length === 0 ? (
-        <section className="card">
-          <h2>Stops</h2>
-          <p className="lede">No stops are assigned for this date.</p>
-        </section>
-      ) : (
-        routes.map((route) => (
-          <section className="card" key={route.id}>
-            <h2>
-              {route.driverName}
-              <span className="lede">
-                {" "}
-                · {route.stops.length} {route.stops.length === 1 ? "stop" : "stops"}
-              </span>
-            </h2>
-            <ul className="driver-list">
-              {route.stops.map((stop, index) => (
-                <li key={stop.id}>
-                  <div>
-                    <strong>
-                      {stop.sequence}. {stop.customerName}
-                    </strong>
-                    <span>{stop.address}</span>
-                    <span>{stop.pickupDescription}</span>
-                    <span className="badge">{statusLabels[stop.status]}</span>
-                  </div>
-                  <StopActivity stop={stop} />
-                  {stop.status === "not_started" ? (
-                    <div className="row-actions">
-                      <button
-                        className="secondary"
-                        type="button"
-                        disabled={index === 0}
-                        onClick={() => {
-                          const ids = route.stops.map((item) => item.id);
-                          [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-                          void reorderRoute(route.id, ids)
-                            .then((result) => setRoutes(result.routes))
-                            .catch((error: unknown) => {
-                              setNotice(error instanceof ApiError ? error.message : "Could not reorder stops.");
-                            });
-                        }}
-                      >
-                        Move up
-                      </button>
-                      <button
-                        className="secondary"
-                        type="button"
-                        disabled={index === route.stops.length - 1}
-                        onClick={() => {
-                          const ids = route.stops.map((item) => item.id);
-                          [ids[index + 1], ids[index]] = [ids[index], ids[index + 1]];
-                          void reorderRoute(route.id, ids)
-                            .then((result) => setRoutes(result.routes))
-                            .catch((error: unknown) => {
-                              setNotice(error instanceof ApiError ? error.message : "Could not reorder stops.");
-                            });
-                        }}
-                      >
-                        Move down
-                      </button>
-                      <button
-                        className="secondary"
-                        type="button"
-                        onClick={() => {
-                          void removeStop(stop.id)
-                            .then(() => {
-                              setNotice(`Removed ${stop.customerName}.`);
-                              return refresh();
-                            })
-                            .catch((error: unknown) => {
-                              setNotice(error instanceof ApiError ? error.message : "Could not remove the stop.");
-                            });
-                        }}
-                      >
-                        Remove
-                      </button>
+
+      <div className="card table-card">
+        <table className="route-table">
+          <thead>
+            <tr>
+              <th>Stop</th>
+              <th>Driver</th>
+              <th>Last status change</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={5}>
+                  <p className="empty-copy">
+                    {flatStops.length === 0
+                      ? "No stops are assigned for this date."
+                      : "No stops match those filters."}
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              filtered.map(({ stop, route, index }) => (
+                <tr key={stop.id}>
+                  <td>
+                    <div className="customer">
+                      <div className="customer-mark">{initials(stop.customerName)}</div>
+                      <div>
+                        {stop.sequence}. {stop.customerName}
+                        <span className="address">{stop.address}</span>
+                        <span className="subtext">{stop.pickupDescription}</span>
+                      </div>
                     </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
-      )}
+                  </td>
+                  <td>{route.driverName}</td>
+                  <td className="subtext">{lastStatusChange(stop)}</td>
+                  <td>
+                    <span className={statusClass(stop.status)}>{statusLabels[stop.status]}</span>
+                  </td>
+                  <td>
+                    <button
+                      className="action-link"
+                      type="button"
+                      onClick={() => setDetails({ stop, route, index })}
+                    >
+                      Details
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+        <div className="table-foot">
+          Showing {filtered.length} of {flatStops.length}{" "}
+          {flatStops.length === 1 ? "stop" : "stops"} scheduled for {date}.
+        </div>
+      </div>
+
       {addingStop ? (
         <Modal title="Add a stop" onClose={() => setAddingStop(false)}>
           <AddStop
@@ -223,7 +296,176 @@ export function RoutesPanel() {
           />
         </Modal>
       ) : null}
+      {importing ? (
+        <Modal title="Import stops" onClose={() => setImporting(false)}>
+          <div className="stack">
+            <p className="lede">
+              CSV columns: driverEmail, serviceDate, customer, pickup. Optional columns: address, sequence. A
+              matching location supplies the address.
+            </p>
+            <label htmlFor="route-csv">CSV file</label>
+            <input
+              id="route-csv"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => {
+                void (async () => {
+                  await onImport(event);
+                  setImporting(false);
+                })();
+              }}
+            />
+            {netsuite?.detail ? <p className="lede">{netsuite.detail}</p> : null}
+            <div className="row-actions">
+              <button className="secondary" type="button" onClick={() => setImporting(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+      {details ? (
+        <Modal title={`${details.stop.customerName}`} onClose={() => setDetails(null)}>
+          <StopDetails
+            item={details}
+            onClose={() => setDetails(null)}
+            onChanged={(nextRoutes, message) => {
+              setRoutes(nextRoutes);
+              setNotice(message);
+              const next = nextRoutes
+                .flatMap((route) => route.stops.map((stop, index) => ({ stop, route, index })))
+                .find((item) => item.stop.id === details.stop.id);
+              setDetails(next ?? null);
+            }}
+            onRemoved={(message) => {
+              setNotice(message);
+              setDetails(null);
+              void refresh();
+            }}
+          />
+        </Modal>
+      ) : null}
     </>
+  );
+}
+
+function StopDetails({
+  item,
+  onClose,
+  onChanged,
+  onRemoved,
+}: {
+  item: FlatStop;
+  onClose: () => void;
+  onChanged: (routes: AssignedRoute[], message: string) => void;
+  onRemoved: (message: string) => void;
+}) {
+  const { stop, route, index } = item;
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="stack">
+      <p className="lede">{stop.address}</p>
+      <p className="lede">Pickup: {stop.pickupDescription}</p>
+      <p>
+        <span className={statusClass(stop.status)}>{statusLabels[stop.status]}</span>
+        <span className="subtext"> · {route.driverName}</span>
+      </p>
+      <h3>Status history</h3>
+      {stop.history.length === 0 ? <p className="lede">No status changes yet.</p> : null}
+      <ul className="history">
+        {stop.history.map((change) => (
+          <li key={change.id}>
+            {change.fromStatus ? statusLabels[change.fromStatus] : "Assigned"} → {statusLabels[change.toStatus]}
+            {change.changedByName ? ` · ${change.changedByName}` : ""} · {new Date(change.changedAt).toLocaleString()}
+          </li>
+        ))}
+      </ul>
+      <h3>Notes</h3>
+      {stop.notes.length === 0 ? <p className="lede">No notes yet.</p> : null}
+      <div className="activity-notes">
+        {stop.notes.map((note) => (
+          <p key={note.id}>
+            {note.body}
+            {note.authorName ? <span className="lede"> · {note.authorName}</span> : null}
+          </p>
+        ))}
+      </div>
+      <h3>Photos</h3>
+      {stop.photos.length === 0 ? <p className="lede">No photos yet.</p> : null}
+      {stop.photos.length > 0 ? (
+        <div className="activity-photos">
+          {stop.photos.map((photo) => (
+            <img key={photo.id} src={`/api/photos/${photo.id}`} alt="" />
+          ))}
+        </div>
+      ) : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {stop.status === "not_started" ? (
+        <div className="row-actions">
+          <button
+            className="secondary"
+            type="button"
+            disabled={index === 0}
+            onClick={() => {
+              const ids = route.stops.map((entry) => entry.id);
+              [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+              void reorderRoute(route.id, ids)
+                .then((result) => {
+                  setError(null);
+                  onChanged(result.routes, `Moved ${stop.customerName} up.`);
+                })
+                .catch((caught: unknown) => {
+                  setError(caught instanceof ApiError ? caught.message : "Could not reorder stops.");
+                });
+            }}
+          >
+            Move up
+          </button>
+          <button
+            className="secondary"
+            type="button"
+            disabled={index === route.stops.length - 1}
+            onClick={() => {
+              const ids = route.stops.map((entry) => entry.id);
+              [ids[index + 1], ids[index]] = [ids[index], ids[index + 1]];
+              void reorderRoute(route.id, ids)
+                .then((result) => {
+                  setError(null);
+                  onChanged(result.routes, `Moved ${stop.customerName} down.`);
+                })
+                .catch((caught: unknown) => {
+                  setError(caught instanceof ApiError ? caught.message : "Could not reorder stops.");
+                });
+            }}
+          >
+            Move down
+          </button>
+          <button
+            className="secondary"
+            type="button"
+            onClick={() => {
+              void removeStop(stop.id)
+                .then(() => onRemoved(`Removed ${stop.customerName}.`))
+                .catch((caught: unknown) => {
+                  setError(caught instanceof ApiError ? caught.message : "Could not remove the stop.");
+                });
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      ) : null}
+      <div className="row-actions">
+        <button className="secondary" type="button" onClick={onClose}>
+          Close
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -324,71 +566,6 @@ function AddStop({
         </button>
       </div>
     </form>
-  );
-}
-
-function LiveSummary({ routes }: { routes: AssignedRoute[] }) {
-  const stops = routes.flatMap((route) => route.stops);
-  const counts = [
-    ["Completed", stops.filter((stop) => stop.status === "completed").length],
-    ["En route", stops.filter((stop) => stop.status === "en_route").length],
-    ["Not started", stops.filter((stop) => stop.status === "not_started").length],
-  ] as const;
-
-  return (
-    <div className="live-summary">
-      {counts.map(([label, count]) => (
-        <div key={label}>
-          <b>{count}</b>
-          <span>{label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function StopActivity({ stop }: { stop: AssignedStop }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div>
-      <button className="secondary" type="button" onClick={() => setOpen((current) => !current)}>
-        {open ? "Hide activity" : "Activity"}
-      </button>
-      {open ? (
-        <div>
-          <h3>Status history</h3>
-          {stop.history.length === 0 ? <p className="lede">No status changes yet.</p> : null}
-          <ul className="history">
-            {stop.history.map((change) => (
-              <li key={change.id}>
-                {change.fromStatus ? statusLabels[change.fromStatus] : "Assigned"} → {statusLabels[change.toStatus]}
-                {change.changedByName ? ` · ${change.changedByName}` : ""} · {new Date(change.changedAt).toLocaleString()}
-              </li>
-            ))}
-          </ul>
-          <h3>Notes</h3>
-          {stop.notes.length === 0 ? <p className="lede">No notes yet.</p> : null}
-          <div className="activity-notes">
-            {stop.notes.map((note) => (
-              <p key={note.id}>
-                {note.body}
-                {note.authorName ? <span className="lede"> · {note.authorName}</span> : null}
-              </p>
-            ))}
-          </div>
-          <h3>Photos</h3>
-          {stop.photos.length === 0 ? <p className="lede">No photos yet.</p> : null}
-          {stop.photos.length > 0 ? (
-            <div className="activity-photos">
-              {stop.photos.map((photo) => (
-                <img key={photo.id} src={`/api/photos/${photo.id}`} alt="" />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
   );
 }
 

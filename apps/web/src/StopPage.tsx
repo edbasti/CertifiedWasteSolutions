@@ -2,7 +2,9 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { type DriverDay, type DriverStop, type StopStatus } from "@cws/shared";
 import { addStopNote, ApiError, loadDay, setStopStatus, uploadStopPhotos } from "./api";
-import { markStopSeen } from "./seenStops";
+import { CameraCapture } from "./CameraCapture";
+import { googleMapsUrl } from "./maps";
+import { Modal } from "./Modal";
 import { useSession } from "./session";
 import "./day.css";
 
@@ -33,6 +35,8 @@ export function StopPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -44,9 +48,6 @@ export function StopPage() {
         }
         setDay(next);
         setError(null);
-        if (stopId) {
-          markStopSeen(date, stopId);
-        }
       })
       .catch((caught: unknown) => {
         if (active) {
@@ -133,8 +134,24 @@ export function StopPage() {
         ) : null}
         {stop ? (
           <section className="card day-focus stack">
-            <p className="lede">{stop.address}</p>
+            <button type="button" className="stop-address stop-address-detail" onClick={() => setMapOpen(true)}>
+              {stop.address}
+            </button>
             <p className="pickup">Pickup: {stop.pickupDescription}</p>
+            {mapOpen ? (
+              <Modal title="Location" onClose={() => setMapOpen(false)}>
+                <p className="lede">{stop.customerName}</p>
+                <p className="map-address">{stop.address}</p>
+                <div className="row-actions">
+                  <a className="primary" href={googleMapsUrl(stop.address)} target="_blank" rel="noreferrer">
+                    Open in Google Maps
+                  </a>
+                  <button className="secondary" type="button" onClick={() => setMapOpen(false)}>
+                    Cancel
+                  </button>
+                </div>
+              </Modal>
+            ) : null}
             <button className="secondary status-button" type="button" onClick={() => setHistoryOpen((open) => !open)}>
               {statusLabels[stop.status]}
             </button>
@@ -155,37 +172,65 @@ export function StopPage() {
               </button>
             ) : null}
             {stop.status === "en_route" ? (
+              <div className="row-actions stop-status-actions">
+                <button
+                  className="primary"
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void run(async () => {
+                      const next = await setStopStatus(stop.id, "completed");
+                      const following = nextIncomplete(next.stops, stop.id);
+                      if (following) {
+                        navigate(`/day/stop/${following.id}?date=${date}`);
+                      } else {
+                        navigate(`/day?date=${date}`);
+                      }
+                      return next;
+                    })
+                  }
+                >
+                  Complete
+                </button>
+                <button
+                  className="secondary"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void run(() => setStopStatus(stop.id, "not_started"))}
+                >
+                  Undo Get started
+                </button>
+              </div>
+            ) : null}
+            {stop.status === "completed" ? (
               <button
-                className="primary"
+                className="secondary"
                 type="button"
                 disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const next = await setStopStatus(stop.id, "completed");
-                    const following = nextIncomplete(next.stops, stop.id);
-                    if (following) {
-                      navigate(`/day/stop/${following.id}?date=${date}`);
-                    } else {
-                      navigate(`/day?date=${date}`);
-                    }
-                    return next;
-                  })
-                }
+                onClick={() => void run(() => setStopStatus(stop.id, "en_route"))}
               >
-                Complete
+                Undo Complete
               </button>
             ) : null}
             <h3>Photo</h3>
             <div className="row-actions">
-              <label className="secondary file-button">
+              <button className="secondary" type="button" disabled={busy} onClick={() => setCameraOpen(true)}>
                 Camera
-                <input type="file" accept="image/*" capture="environment" onChange={choosePhotos} />
-              </label>
+              </button>
               <label className="secondary file-button">
                 Gallery
                 <input type="file" accept="image/*" multiple onChange={choosePhotos} />
               </label>
             </div>
+            {cameraOpen ? (
+              <CameraCapture
+                onClose={() => setCameraOpen(false)}
+                onCapture={(file) => {
+                  setCameraOpen(false);
+                  void run(() => uploadStopPhotos(stop.id, [file]));
+                }}
+              />
+            ) : null}
             {stop.photos.length > 0 ? (
               <div className="photo-row">
                 {stop.photos.map((photo) => (

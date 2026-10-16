@@ -186,18 +186,7 @@ export function PortalPage() {
 
         <section className="portal-content">
           {section === "dashboard" ? <DashboardPanel onOpenRoutes={() => go("routes")} /> : null}
-          {section === "routes" ? (
-            <>
-              <div className="page-heading">
-                <div>
-                  <p className="eyebrow">{meta.eyebrow}</p>
-                  <h2>{meta.title}</h2>
-                  <p className="lede">{meta.lede}</p>
-                </div>
-              </div>
-              <RoutesPanel />
-            </>
-          ) : null}
+          {section === "routes" ? <RoutesPanel /> : null}
           {section === "logs" ? (
             <>
               <div className="page-heading">
@@ -223,30 +212,8 @@ export function PortalPage() {
               <ReportsPanel />
             </>
           ) : null}
-          {section === "customers" ? (
-            <>
-              <div className="page-heading">
-                <div>
-                  <p className="eyebrow">{meta.eyebrow}</p>
-                  <h2>{meta.title}</h2>
-                  <p className="lede">{meta.lede}</p>
-                </div>
-              </div>
-              <CustomersPanel />
-            </>
-          ) : null}
-          {section === "drivers" && isAdmin ? (
-            <>
-              <div className="page-heading">
-                <div>
-                  <p className="eyebrow">{meta.eyebrow}</p>
-                  <h2>{meta.title}</h2>
-                  <p className="lede">{meta.lede}</p>
-                </div>
-              </div>
-              <DriverAdmin />
-            </>
-          ) : null}
+          {section === "customers" ? <CustomersPanel /> : null}
+          {section === "drivers" && isAdmin ? <DriverAdmin /> : null}
           {section === "netsuite" ? (
             <>
               <div className="page-heading">
@@ -270,7 +237,9 @@ function DriverAdmin() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [editing, setEditing] = useState<DriverAccount | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
 
   async function refresh() {
     const result = await listDrivers();
@@ -311,19 +280,25 @@ function DriverAdmin() {
     }
   }
 
+  const resetting = drivers.find((driver) => driver.id === resettingId) ?? null;
+
   return (
     <>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Team access</p>
+          <h2>Drivers</h2>
+          <p className="lede">Create accounts, reset access, and review route activity.</p>
+        </div>
+      </div>
       <div className="panel-actions">
         <button className="primary" type="button" onClick={() => setCreating(true)}>
           New driver
         </button>
+        <button className="secondary" type="button" onClick={() => setImporting(true)}>
+          Import drivers
+        </button>
       </div>
-      <section className="card stack">
-        <h2>Import drivers</h2>
-        <p className="lede">CSV columns: name, email, password. Optional columns: companyName, active.</p>
-        <label htmlFor="driver-csv">CSV file</label>
-        <input id="driver-csv" type="file" accept=".csv,text/csv" onChange={(event) => void onImport(event)} />
-      </section>
       {notice ? <p className="notice">{notice}</p> : null}
       {loadError ? (
         <p className="form-error" role="alert">
@@ -347,6 +322,9 @@ function DriverAdmin() {
                 <button className="secondary" type="button" onClick={() => setEditing(driver)}>
                   Edit
                 </button>
+                <button className="secondary" type="button" onClick={() => setResettingId(driver.id)}>
+                  Reset access
+                </button>
                 <button
                   className="secondary"
                   type="button"
@@ -368,10 +346,6 @@ function DriverAdmin() {
                   {driver.active ? "Deactivate" : "Reactivate"}
                 </button>
               </div>
-              <ResetAccess
-                driverId={driver.id}
-                onReset={() => setNotice(`Access reset for ${driver.name}. Previous sign-ins were ended.`)}
-              />
             </li>
           ))}
         </ul>
@@ -388,6 +362,30 @@ function DriverAdmin() {
           />
         </Modal>
       ) : null}
+      {importing ? (
+        <Modal title="Import drivers" onClose={() => setImporting(false)}>
+          <div className="stack">
+            <p className="lede">CSV columns: name, email, password. Optional columns: companyName, active.</p>
+            <label htmlFor="driver-csv">CSV file</label>
+            <input
+              id="driver-csv"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => {
+                void (async () => {
+                  await onImport(event);
+                  setImporting(false);
+                })();
+              }}
+            />
+            <div className="row-actions">
+              <button className="secondary" type="button" onClick={() => setImporting(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
       {editing ? (
         <Modal title="Edit driver" onClose={() => setEditing(null)}>
           <CreateDriver
@@ -398,6 +396,18 @@ function DriverAdmin() {
               setNotice(`Saved ${name}.`);
               setEditing(null);
               void refresh();
+            }}
+          />
+        </Modal>
+      ) : null}
+      {resetting ? (
+        <Modal title={`Reset access · ${resetting.name}`} onClose={() => setResettingId(null)}>
+          <ResetAccess
+            driverId={resetting.id}
+            onCancel={() => setResettingId(null)}
+            onReset={() => {
+              setNotice(`Access reset for ${resetting.name}. Previous sign-ins were ended.`);
+              setResettingId(null);
             }}
           />
         </Modal>
@@ -509,7 +519,15 @@ function CreateDriver({
   );
 }
 
-function ResetAccess({ driverId, onReset }: { driverId: string; onReset: () => void }) {
+function ResetAccess({
+  driverId,
+  onReset,
+  onCancel,
+}: {
+  driverId: string;
+  onReset: () => void;
+  onCancel: () => void;
+}) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -526,28 +544,30 @@ function ResetAccess({ driverId, onReset }: { driverId: string; onReset: () => v
   }
 
   return (
-    <form className="reset-access" onSubmit={onSubmit}>
-      <label className="sr-only" htmlFor={`reset-${driverId}`}>
-        New password
-      </label>
+    <form className="stack" onSubmit={onSubmit}>
+      <label htmlFor={`reset-${driverId}`}>New password</label>
       <input
         id={`reset-${driverId}`}
         type="password"
         autoComplete="new-password"
-        placeholder="New password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         required
         minLength={8}
       />
-      <button className="primary" type="submit">
-        Reset access
-      </button>
       {error ? (
         <p className="form-error" role="alert">
           {error}
         </p>
       ) : null}
+      <div className="row-actions">
+        <button className="primary" type="submit">
+          Reset access
+        </button>
+        <button className="secondary" type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }
