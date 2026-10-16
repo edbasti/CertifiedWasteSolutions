@@ -11,6 +11,7 @@ import {
   removeStop,
   reorderRoute,
 } from "./api";
+import { Modal } from "./Modal";
 
 const statusLabels: Record<StopStatus, string> = {
   not_started: "Not started",
@@ -32,6 +33,7 @@ export function RoutesPanel() {
   const [sources, setSources] = useState<StopSourceInfo[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [addingStop, setAddingStop] = useState(false);
 
   async function refresh(nextDate = date) {
     const result = await listRoutes(nextDate);
@@ -99,15 +101,11 @@ export function RoutesPanel() {
           required
         />
       </form>
-      <AddStop
-        date={date}
-        drivers={drivers}
-        customers={customers}
-        onAdded={(name) => {
-          setNotice(`${name} was added.`);
-          void refresh();
-        }}
-      />
+      <div className="panel-actions">
+        <button className="primary" type="button" onClick={() => setAddingStop(true)}>
+          Add a stop
+        </button>
+      </div>
       <section className="card stack">
         <h2>Import stops</h2>
         <p className="lede">
@@ -210,6 +208,21 @@ export function RoutesPanel() {
           </section>
         ))
       )}
+      {addingStop ? (
+        <Modal title="Add a stop" onClose={() => setAddingStop(false)}>
+          <AddStop
+            date={date}
+            drivers={drivers}
+            customers={customers}
+            onCancel={() => setAddingStop(false)}
+            onAdded={(name) => {
+              setNotice(`${name} was added.`);
+              setAddingStop(false);
+              void refresh();
+            }}
+          />
+        </Modal>
+      ) : null}
     </>
   );
 }
@@ -219,11 +232,13 @@ function AddStop({
   drivers,
   customers,
   onAdded,
+  onCancel,
 }: {
   date: string;
   drivers: { id: string; name: string }[];
   customers: CustomerAccount[];
   onAdded: (name: string) => void;
+  onCancel: () => void;
 }) {
   const [driverUserId, setDriverUserId] = useState("");
   const [customerId, setCustomerId] = useState("");
@@ -262,8 +277,7 @@ function AddStop({
   }
 
   return (
-    <form className="card stack" onSubmit={onSubmit}>
-      <h2>Add a stop</h2>
+    <form className="stack" onSubmit={onSubmit}>
       <label htmlFor="route-driver">Driver</label>
       <select id="route-driver" value={driverUserId} onChange={(event) => setDriverUserId(event.target.value)} required>
         {drivers.map((driver) => (
@@ -301,9 +315,14 @@ function AddStop({
           {error}
         </p>
       ) : null}
-      <button className="primary" type="submit">
-        Add stop
-      </button>
+      <div className="row-actions">
+        <button className="primary" type="submit">
+          Add stop
+        </button>
+        <button className="secondary" type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }

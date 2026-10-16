@@ -7,6 +7,7 @@ export function CustomersPanel() {
   const [customers, setCustomers] = useState<CustomerAccount[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<CustomerAccount | null>(null);
 
   async function refresh() {
@@ -50,12 +51,11 @@ export function CustomersPanel() {
 
   return (
     <>
-      <CustomerForm
-        onSaved={(message) => {
-          setNotice(message);
-          void refresh();
-        }}
-      />
+      <div className="panel-actions">
+        <button className="primary" type="button" onClick={() => setCreating(true)}>
+          New location
+        </button>
+      </div>
       <section className="card stack">
         <h2>Import locations</h2>
         <p className="lede">CSV columns: name, address. Optional column: active.</p>
@@ -108,6 +108,18 @@ export function CustomersPanel() {
           ))}
         </ul>
       </section>
+      {creating ? (
+        <Modal title="New location" onClose={() => setCreating(false)}>
+          <CustomerForm
+            onCancel={() => setCreating(false)}
+            onSaved={(message) => {
+              setNotice(message);
+              setCreating(false);
+              void refresh();
+            }}
+          />
+        </Modal>
+      ) : null}
       {editing ? (
         <Modal title="Edit location" onClose={() => setEditing(null)}>
           <CustomerForm
@@ -183,7 +195,7 @@ function CustomerForm({
         <button className="primary" type="submit">
           {isEditing ? "Save location" : "Add location"}
         </button>
-        {isEditing && onCancel ? (
+        {onCancel ? (
           <button className="secondary" type="button" onClick={onCancel}>
             Cancel
           </button>
@@ -192,17 +204,8 @@ function CustomerForm({
     </>
   );
 
-  if (isEditing) {
-    return (
-      <form className="stack" onSubmit={onSubmit}>
-        {fields}
-      </form>
-    );
-  }
-
   return (
-    <form className="card stack" onSubmit={onSubmit}>
-      <h2>New location</h2>
+    <form className="stack" onSubmit={onSubmit}>
       {fields}
     </form>
   );

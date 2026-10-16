@@ -44,6 +44,21 @@ a.secondary {
   text-align: left;
   padding: 0;
   width: 100%;
+  text-decoration: none;
+  display: block;
+}
+
+.stop-section {
+  margin-top: 24px;
+}
+
+.stop-section h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.stop-section.archived .stop-card {
+  opacity: 0.78;
 }
 
 .stop-top {

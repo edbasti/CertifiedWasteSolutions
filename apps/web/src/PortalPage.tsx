@@ -269,6 +269,7 @@ function DriverAdmin() {
   const [drivers, setDrivers] = useState<DriverAccount[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<DriverAccount | null>(null);
 
   async function refresh() {
@@ -312,12 +313,11 @@ function DriverAdmin() {
 
   return (
     <>
-      <CreateDriver
-        onCreated={(name) => {
-          setNotice(`${name} can sign in with the password you set.`);
-          void refresh();
-        }}
-      />
+      <div className="panel-actions">
+        <button className="primary" type="button" onClick={() => setCreating(true)}>
+          New driver
+        </button>
+      </div>
       <section className="card stack">
         <h2>Import drivers</h2>
         <p className="lede">CSV columns: name, email, password. Optional columns: companyName, active.</p>
@@ -376,6 +376,18 @@ function DriverAdmin() {
           ))}
         </ul>
       </section>
+      {creating ? (
+        <Modal title="New driver" onClose={() => setCreating(false)}>
+          <CreateDriver
+            onCancel={() => setCreating(false)}
+            onCreated={(name) => {
+              setNotice(`${name} can sign in with the password you set.`);
+              setCreating(false);
+              void refresh();
+            }}
+          />
+        </Modal>
+      ) : null}
       {editing ? (
         <Modal title="Edit driver" onClose={() => setEditing(null)}>
           <CreateDriver
@@ -481,7 +493,7 @@ function CreateDriver({
         <button className="primary" type="submit">
           {isEditing ? "Save driver" : "Create driver"}
         </button>
-        {isEditing && onCancel ? (
+        {onCancel ? (
           <button className="secondary" type="button" onClick={onCancel}>
             Cancel
           </button>
@@ -490,17 +502,8 @@ function CreateDriver({
     </>
   );
 
-  if (isEditing) {
-    return (
-      <form className="stack" onSubmit={onSubmit}>
-        {fields}
-      </form>
-    );
-  }
-
   return (
-    <form className="card stack" onSubmit={onSubmit}>
-      <h2>New driver</h2>
+    <form className="stack" onSubmit={onSubmit}>
       {fields}
     </form>
   );

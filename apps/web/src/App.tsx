@@ -6,6 +6,7 @@ import { HomePage } from "./HomePage";
 import { LoginPage } from "./LoginPage";
 import { PortalPage } from "./PortalPage";
 import { RequireAuth, useSession } from "./session";
+import { StopPage } from "./StopPage";
 
 export function App() {
   return (
@@ -18,6 +19,14 @@ export function App() {
           element={
             <RequireAuth roles={["driver"]}>
               <DayPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/day/stop/:stopId"
+          element={
+            <RequireAuth roles={["driver"]}>
+              <StopPage />
             </RequireAuth>
           }
         />
