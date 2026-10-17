@@ -274,10 +274,10 @@ export function DayPage() {
         <div className="day-list">
           {activeDays.map((day) => (
             <Link key={day.routeId} className="day-card" to={`/day/stops?date=${day.serviceDate}`}>
-              <div>
+              <div className="day-card-copy">
                 <strong>{formatDay(day.serviceDate)}</strong>
                 <span className="subtext">
-                  {day.completedCount} of {day.stopCount} stops complete
+                  {day.completedCount}/{day.stopCount} complete
                 </span>
               </div>
               <span className="status pending">Open</span>
@@ -341,7 +341,7 @@ export function ArchivedDaysPage() {
         <div className="day-list">
           {days.map((day) => (
             <Link key={day.routeId} className="day-card" to={`/day/stops?date=${day.serviceDate}`}>
-              <div>
+              <div className="day-card-copy">
                 <strong>{formatDay(day.serviceDate)}</strong>
                 <span className="subtext">
                   {day.stopCount} {day.stopCount === 1 ? "stop" : "stops"}
