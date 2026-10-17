@@ -265,9 +265,9 @@ function StopRow({ stop, driverName }: { stop: AssignedStop; driverName: string 
       <td>
         <div className="customer">
           <div className="customer-mark">{initials(stop.customerName)}</div>
-          <div>
-            {stop.customerName}
-            <span className="address">{stop.address}</span>
+          <div className="customer-copy">
+            <span className="customer-title">{stop.customerName}</span>
+            <span className="subtext">{stop.address}</span>
           </div>
         </div>
       </td>

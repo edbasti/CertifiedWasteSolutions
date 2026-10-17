@@ -266,9 +266,7 @@ export function RoutesPanel() {
                           {stop.sequence}. {stop.customerName}
                         </span>
                         <span className="subtext">
-                          {stop.address}
-                          {" · "}
-                          {serviceTypeLabels[stop.serviceType]} · Qty {stop.quantity}
+                          {stop.address} · {serviceTypeLabels[stop.serviceType]} · Qty {stop.quantity}
                           {stop.driverNotes ? ` · ${stop.driverNotes}` : ""}
                         </span>
                       </div>
