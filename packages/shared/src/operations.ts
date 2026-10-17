@@ -36,6 +36,9 @@ export type AssignedStop = {
   customerId: string | null;
   customerName: string;
   address: string;
+  serviceType: ServiceType;
+  quantity: number;
+  driverNotes: string;
   pickupDescription: string;
   status: StopStatus;
   notes: DriverStopNote[];
@@ -131,6 +134,9 @@ export type DriverStop = {
   sequence: number;
   customerName: string;
   address: string;
+  serviceType: ServiceType;
+  quantity: number;
+  driverNotes: string;
   pickupDescription: string;
   status: StopStatus;
   notes: DriverStopNote[];
@@ -152,6 +158,9 @@ export type CompletedStop = {
   driverName: string;
   customerName: string;
   address: string;
+  serviceType: ServiceType;
+  quantity: number;
+  driverNotes: string;
   pickupDescription: string;
   notes: DriverStopNote[];
   photos: DriverStopPhoto[];
@@ -188,6 +197,35 @@ export type AppNotification = {
 
 export const stopStatuses = ["not_started", "en_route", "completed"] as const;
 export type StopStatus = (typeof stopStatuses)[number];
+
+export const serviceTypes = ["remove", "delivery", "swap", "dump_and_return", "relocate"] as const;
+export type ServiceType = (typeof serviceTypes)[number];
+
+export const serviceTypeLabels: Record<ServiceType, string> = {
+  remove: "Remove",
+  delivery: "Delivery",
+  swap: "Swap",
+  dump_and_return: "Dump and Return",
+  relocate: "Relocate",
+};
+
+export function isServiceType(value: string): value is ServiceType {
+  return (serviceTypes as readonly string[]).includes(value);
+}
+
+export function composePickupDescription(serviceType: ServiceType, quantity: number, driverNotes: string) {
+  const base = `${serviceTypeLabels[serviceType]} · Qty ${quantity}`;
+  const notes = driverNotes.trim();
+  return notes ? `${base} · ${notes}` : base;
+}
+
+export type DriverDaySummary = {
+  serviceDate: string;
+  routeId: string;
+  stopCount: number;
+  completedCount: number;
+  completed: boolean;
+};
 
 export const routeSources = ["csv", "netsuite", "manual"] as const;
 export type RouteSource = (typeof routeSources)[number];

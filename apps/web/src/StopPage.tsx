@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { type DriverDay, type DriverStop, type StopStatus } from "@cws/shared";
+import { serviceTypeLabels, stopStatuses, type DriverDay, type DriverStop, type StopStatus } from "@cws/shared";
 import { addStopNote, ApiError, loadDay, setStopStatus, uploadStopPhotos } from "./api";
 import { CameraCapture } from "./CameraCapture";
 import { googleMapsUrl } from "./maps";
@@ -116,7 +116,7 @@ export function StopPage() {
             <h2>{stop ? stop.customerName : "Stop"}</h2>
             <p className="lede">Update status, photos, and notes for this stop.</p>
           </div>
-          <Link className="secondary" to={`/day?date=${date}`}>
+          <Link className="secondary" to={`/day/stops?date=${date}`}>
             ← All stops
           </Link>
         </div>
@@ -129,7 +129,7 @@ export function StopPage() {
         {!stop && error ? (
           <p className="lede">
             This stop is not on your route for {date}.{" "}
-            <Link to={`/day?date=${date}`}>Back to today&apos;s stops</Link>
+            <Link to={`/day/stops?date=${date}`}>Back to today&apos;s stops</Link>
           </p>
         ) : null}
         {stop ? (
@@ -137,7 +137,10 @@ export function StopPage() {
             <button type="button" className="stop-address stop-address-detail" onClick={() => setMapOpen(true)}>
               {stop.address}
             </button>
-            <p className="pickup">Pickup: {stop.pickupDescription}</p>
+            <p className="pickup">
+              {serviceTypeLabels[stop.serviceType]} · Qty {stop.quantity}
+            </p>
+            {stop.driverNotes ? <p className="lede">Notes: {stop.driverNotes}</p> : null}
             {mapOpen ? (
               <Modal title="Location" onClose={() => setMapOpen(false)}>
                 <p className="lede">{stop.customerName}</p>
@@ -152,8 +155,36 @@ export function StopPage() {
                 </div>
               </Modal>
             ) : null}
+            <label htmlFor="stop-status">Status</label>
+            <select
+              id="stop-status"
+              className="stop-status-select"
+              value={stop.status}
+              disabled={busy}
+              onChange={(event) => {
+                const nextStatus = event.target.value as StopStatus;
+                void run(async () => {
+                  const next = await setStopStatus(stop.id, nextStatus);
+                  if (nextStatus === "completed") {
+                    const following = nextIncomplete(next.stops, stop.id);
+                    if (following) {
+                      navigate(`/day/stop/${following.id}?date=${date}`);
+                    } else {
+                      navigate(`/day/stops?date=${date}`);
+                    }
+                  }
+                  return next;
+                });
+              }}
+            >
+              {stopStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {statusLabels[status]}
+                </option>
+              ))}
+            </select>
             <button className="secondary status-button" type="button" onClick={() => setHistoryOpen((open) => !open)}>
-              {statusLabels[stop.status]}
+              {historyOpen ? "Hide history" : "Status history"}
             </button>
             {historyOpen ? (
               <ul className="history">
@@ -165,52 +196,6 @@ export function StopPage() {
                   </li>
                 ))}
               </ul>
-            ) : null}
-            {stop.status === "not_started" ? (
-              <button className="primary" type="button" disabled={busy} onClick={() => void run(() => setStopStatus(stop.id, "en_route"))}>
-                Get started
-              </button>
-            ) : null}
-            {stop.status === "en_route" ? (
-              <div className="row-actions stop-status-actions">
-                <button
-                  className="primary"
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    void run(async () => {
-                      const next = await setStopStatus(stop.id, "completed");
-                      const following = nextIncomplete(next.stops, stop.id);
-                      if (following) {
-                        navigate(`/day/stop/${following.id}?date=${date}`);
-                      } else {
-                        navigate(`/day?date=${date}`);
-                      }
-                      return next;
-                    })
-                  }
-                >
-                  Complete
-                </button>
-                <button
-                  className="secondary"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void run(() => setStopStatus(stop.id, "not_started"))}
-                >
-                  Undo Get started
-                </button>
-              </div>
-            ) : null}
-            {stop.status === "completed" ? (
-              <button
-                className="secondary"
-                type="button"
-                disabled={busy}
-                onClick={() => void run(() => setStopStatus(stop.id, "en_route"))}
-              >
-                Undo Complete
-              </button>
             ) : null}
             <h3>Photo</h3>
             <div className="row-actions">

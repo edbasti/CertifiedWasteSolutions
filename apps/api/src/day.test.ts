@@ -65,7 +65,10 @@ describe("driver day", () => {
     ]);
     const harbor = body.stops.find((stop) => stop.customerName === "Harbor City Market");
     expect(harbor?.status).toBe("not_started");
-    expect(harbor?.pickupDescription).toBe("Mixed recycling");
+    expect(harbor?.pickupDescription).toBe("Dump and Return · Qty 1 · Mixed recycling");
+    expect(harbor?.serviceType).toBe("dump_and_return");
+    expect(harbor?.quantity).toBe(1);
+    expect(harbor?.driverNotes).toBe("Mixed recycling");
 
     const started = await app.request(`/api/stops/${harbor?.id}/status`, {
       method: "POST",

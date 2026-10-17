@@ -105,7 +105,10 @@ describe("route notifications", () => {
         driverUserId: seedIds.sam,
         serviceDate: "2026-10-08",
         customerId: seedIds.metro,
-        pickupDescription: "Cardboard",
+        serviceType: "remove",
+        quantity: 1,
+        driverNotes: "Cardboard",
+        pickupDescription: "Remove · Qty 1 · Cardboard",
       }),
     });
     expect(created.status).toBe(201);
@@ -135,6 +138,12 @@ describe("route notifications", () => {
       type: "route_updated",
       message: "Metro Foods was removed from 2026-10-08.",
     });
-    expect(await notices(alex)).toHaveLength(2);
+    // Unread only; completed route days are omitted from the inbox.
+    expect(await notices(alex)).toHaveLength(1);
+    expect((await notices(alex))[0]).toMatchObject({
+      type: "route_assigned",
+      serviceDate: "2026-09-30",
+      readAt: null,
+    });
   });
 });

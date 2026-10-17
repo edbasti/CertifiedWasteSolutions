@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { homePath } from "@cws/shared";
-import { DayPage } from "./DayPage";
+import { ArchivedDaysPage, DayPage, DayStopsPage } from "./DayPage";
 import { LogPage } from "./LogPage";
 import { HomePage } from "./HomePage";
 import { LoginPage } from "./LoginPage";
@@ -19,6 +19,22 @@ export function App() {
           element={
             <RequireAuth roles={["driver"]}>
               <DayPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/day/stops"
+          element={
+            <RequireAuth roles={["driver"]}>
+              <DayStopsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/day/archived"
+          element={
+            <RequireAuth roles={["driver"]}>
+              <ArchivedDaysPage />
             </RequireAuth>
           }
         />

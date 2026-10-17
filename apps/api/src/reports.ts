@@ -1,6 +1,6 @@
 import type { Context, Hono } from "hono";
 import type { CompletedStop, CompletedStopReport, StatusDurationAverage, StopStatus } from "@cws/shared";
-import { stopStatuses } from "@cws/shared";
+import { isServiceType, stopStatuses } from "@cws/shared";
 import type { AppEnv } from "./app-env";
 import { requireRole, requireUser } from "./auth";
 import type { CwsDatabase } from "./db/client";
@@ -93,6 +93,9 @@ async function completedStopReport(db: CwsDatabase, filters: Filters): Promise<C
       driverName,
       customerName: stop.customerName,
       address: stop.address,
+      serviceType: isServiceType(stop.serviceType) ? stop.serviceType : "remove",
+      quantity: stop.quantity,
+      driverNotes: stop.driverNotes,
       pickupDescription: stop.pickupDescription,
       notes: notes
         .filter((note) => note.stopId === stop.id)

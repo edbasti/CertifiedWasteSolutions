@@ -18,6 +18,56 @@ a.secondary {
   padding: 16px 18px;
 }
 
+.day-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.day-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.day-card strong {
+  display: block;
+  font-size: 14px;
+}
+
+.day-card:hover {
+  border-color: #9bc4a8;
+}
+
+.notices.compact {
+  margin-top: 12px;
+}
+
+.notice-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.notice-list button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
 .stop-list {
   margin-top: 10px;
   display: grid;
@@ -257,6 +307,16 @@ a.primary {
 
 .status-button {
   width: fit-content;
+}
+
+.stop-status-select {
+  width: 100%;
+  max-width: 280px;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
 }
 
 .stop-status-actions {

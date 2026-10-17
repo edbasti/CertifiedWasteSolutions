@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { type AppNotification, type DriverDay, type DriverStop, type StopStatus } from "@cws/shared";
-import { ApiError, listNotifications, loadDay, markNotificationRead, reorderDay } from "./api";
+import {
+  serviceTypeLabels,
+  type AppNotification,
+  type DriverDay,
+  type DriverDaySummary,
+  type DriverStop,
+  type StopStatus,
+} from "@cws/shared";
+import { ApiError, listDriverDays, listNotifications, loadDay, markNotificationRead, reorderDay } from "./api";
 import { googleMapsUrl } from "./maps";
 import { Modal } from "./Modal";
 import { useSession } from "./session";
@@ -19,14 +26,51 @@ function localDate() {
   return local.toISOString().slice(0, 10);
 }
 
+function formatDay(date: string) {
+  return new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function nextIncomplete(stops: DriverStop[]) {
   return stops.find((stop) => stop.status !== "completed");
 }
 
-function RouteNotices() {
+function FieldShell({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  const { user, logout } = useSession();
+  return (
+    <div className="field-shell">
+      <header className="field-topbar">
+        <div>
+          <p className="eyebrow">Driver</p>
+          <h1>{title}</h1>
+        </div>
+        <div className="top-actions">
+          <span>
+            {user?.name} · {user?.role}
+          </span>
+          <button className="secondary" type="button" onClick={() => void logout()}>
+            Sign out
+          </button>
+        </div>
+      </header>
+      <main className="content day">{children}</main>
+    </div>
+  );
+}
+
+function CompactNotices() {
   const navigate = useNavigate();
   const [items, setItems] = useState<AppNotification[]>([]);
-  const [openingId, setOpeningId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -46,59 +90,38 @@ function RouteNotices() {
     };
   }, []);
 
-  async function open(item: AppNotification) {
-    if (openingId) {
-      return;
-    }
-    setOpeningId(item.id);
-    try {
-      if (!item.readAt) {
-        try {
-          const result = await markNotificationRead(item.id);
-          setItems((current) => current.map((notice) => (notice.id === item.id ? result.notification : notice)));
-        } catch {
-          return;
-        }
-      }
-      const serviceDate = item.serviceDate;
-      if (!serviceDate) {
-        return;
-      }
-      const day = await loadDay(serviceDate);
-      const first = nextIncomplete(day.stops) ?? day.stops[0];
-      if (first) {
-        navigate(`/day/stop/${first.id}?date=${serviceDate}`);
-      } else {
-        navigate(`/day?date=${serviceDate}`);
-      }
-    } catch {
-      if (item.serviceDate) {
-        navigate(`/day?date=${item.serviceDate}`);
-      }
-    } finally {
-      setOpeningId(null);
-    }
-  }
-
   if (items.length === 0) {
     return null;
   }
 
   return (
-    <section className="notices" aria-label="Route updates">
-      <h2>Route updates</h2>
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          data-unread={item.readAt ? "false" : "true"}
-          disabled={openingId === item.id}
-          onClick={() => void open(item)}
-        >
-          {item.readAt ? null : <small>New</small>}
-          {item.message}
-        </button>
-      ))}
+    <section className="notices compact" aria-label="Route updates">
+      <h2>New route updates</h2>
+      <ul className="notice-list">
+        {items.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              onClick={() => {
+                void (async () => {
+                  if (!item.readAt) {
+                    try {
+                      await markNotificationRead(item.id);
+                    } catch {
+                      return;
+                    }
+                  }
+                  if (item.serviceDate) {
+                    navigate(`/day/stops?date=${item.serviceDate}`);
+                  }
+                })();
+              }}
+            >
+              {item.message}
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -129,7 +152,10 @@ function StopCard({
           <span className="stop-number">{stop.sequence}</span>
           <span className="stop-copy">
             <span className="stop-title">{stop.customerName}</span>
-            <span className="stop-meta">{stop.pickupDescription}</span>
+            <span className="stop-meta">
+              {serviceTypeLabels[stop.serviceType]} · Qty {stop.quantity}
+              {stop.driverNotes ? ` · ${stop.driverNotes}` : ""}
+            </span>
           </span>
           <span
             className={
@@ -193,21 +219,152 @@ function StopCard({
   );
 }
 
+/** Driver home: active route days only. */
 export function DayPage() {
-  const { user, logout } = useSession();
+  const { user } = useSession();
+  const [days, setDays] = useState<DriverDaySummary[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    listDriverDays()
+      .then((result) => {
+        if (active) {
+          setDays(result.days);
+          setError(null);
+        }
+      })
+      .catch((caught: unknown) => {
+        if (active) {
+          setError(caught instanceof ApiError ? caught.message : "Could not load your route days.");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activeDays = days.filter((day) => !day.completed);
+  const archivedCount = days.filter((day) => day.completed).length;
+
+  return (
+    <FieldShell title="My route days">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Driver</p>
+          <h2>Good morning, {user?.name?.split(" ")[0] ?? "driver"}</h2>
+          <p className="lede">Open a day to work its stops. Completed days move to Archived.</p>
+        </div>
+        <Link className="secondary" to="/day/archived">
+          Archived ({archivedCount}) →
+        </Link>
+      </div>
+      <CompactNotices />
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {activeDays.length === 0 ? (
+        <p className="lede">
+          No open route days.{" "}
+          {archivedCount > 0 ? <Link to="/day/archived">View archived days</Link> : "Check back when the office assigns stops."}
+        </p>
+      ) : (
+        <div className="day-list">
+          {activeDays.map((day) => (
+            <Link key={day.routeId} className="day-card" to={`/day/stops?date=${day.serviceDate}`}>
+              <div>
+                <strong>{formatDay(day.serviceDate)}</strong>
+                <span className="subtext">
+                  {day.completedCount} of {day.stopCount} stops complete
+                </span>
+              </div>
+              <span className="status pending">Open</span>
+            </Link>
+          ))}
+        </div>
+      )}
+      <div className="day-log-footer">
+        <p>When a day is finished, fill the Independent Driver Log for that date.</p>
+        <Link className="primary" to={`/log?date=${localDate()}`}>
+          Independent Driver Log →
+        </Link>
+      </div>
+    </FieldShell>
+  );
+}
+
+export function ArchivedDaysPage() {
+  const [days, setDays] = useState<DriverDaySummary[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    listDriverDays()
+      .then((result) => {
+        if (active) {
+          setDays(result.days.filter((day) => day.completed));
+          setError(null);
+        }
+      })
+      .catch((caught: unknown) => {
+        if (active) {
+          setError(caught instanceof ApiError ? caught.message : "Could not load archived days.");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <FieldShell title="Archived days">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Completed</p>
+          <h2>Archived route days</h2>
+          <p className="lede">Days where every stop is marked completed.</p>
+        </div>
+        <Link className="secondary" to="/day">
+          ← Open days
+        </Link>
+      </div>
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {days.length === 0 ? (
+        <p className="lede">No archived days yet.</p>
+      ) : (
+        <div className="day-list">
+          {days.map((day) => (
+            <Link key={day.routeId} className="day-card" to={`/day/stops?date=${day.serviceDate}`}>
+              <div>
+                <strong>{formatDay(day.serviceDate)}</strong>
+                <span className="subtext">
+                  {day.stopCount} {day.stopCount === 1 ? "stop" : "stops"}
+                </span>
+              </div>
+              <span className="status complete">Completed</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </FieldShell>
+  );
+}
+
+/** Compact stop list for one service date — click always opens stop detail. */
+export function DayStopsPage() {
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const queryDate = params.get("date") ?? "";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(queryDate) ? queryDate : localDate();
   const [day, setDay] = useState<DriverDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(queryDate)) {
-      setParams({ date }, { replace: true });
-    }
-  }, [date, queryDate, setParams]);
 
   useEffect(() => {
     let active = true;
@@ -230,8 +387,9 @@ export function DayPage() {
 
   const stops = day?.stops ?? [];
   const completed = stops.filter((stop) => stop.status === "completed").length;
-  const activeStops = stops.filter((stop) => stop.status !== "completed");
-  const archivedStops = stops.filter((stop) => stop.status === "completed");
+  const dayComplete = stops.length > 0 && completed === stops.length;
+  const listStops = dayComplete ? stops : stops.filter((stop) => stop.status !== "completed");
+  const hiddenCompleted = dayComplete ? 0 : completed;
 
   async function run(action: () => Promise<DriverDay>) {
     setBusy(true);
@@ -243,14 +401,6 @@ export function DayPage() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function getStarted() {
-    const stop = nextIncomplete(activeStops);
-    if (!stop) {
-      return;
-    }
-    navigate(`/day/stop/${stop.id}?date=${date}`);
   }
 
   function reorderInList(list: DriverStop[], index: number, direction: "up" | "down") {
@@ -269,138 +419,83 @@ export function DayPage() {
   }
 
   return (
-    <div className="field-shell">
-      <header className="field-topbar">
+    <FieldShell title="Stops">
+      <div className="page-heading">
         <div>
-          <p className="eyebrow">Driver</p>
-          <h1>Today&apos;s stops</h1>
+          <p className="eyebrow">{formatDay(date)}</p>
+          <h2>{dayComplete ? "Completed day" : "Today's stops"}</h2>
+          <p className="lede">Tap a stop to open its detail page.</p>
         </div>
-        <div className="top-actions">
+        <Link className="secondary" to={dayComplete ? "/day/archived" : "/day"}>
+          ← {dayComplete ? "Archived days" : "My route days"}
+        </Link>
+      </div>
+      <div className="driver-progress card">
+        <div className="progress-row">
           <span>
-            {user?.name} · {user?.role}
+            <b>
+              {completed} of {stops.length}
+            </b>{" "}
+            complete
           </span>
-          <button className="secondary" type="button" onClick={() => void logout()}>
-            Sign out
-          </button>
+          <b>{stops.length === 0 ? "0%" : `${Math.round((completed / stops.length) * 100)}%`}</b>
         </div>
-      </header>
-      <main className="content day">
-        <div className="page-heading">
-          <div>
-            <p className="eyebrow">Route day</p>
-            <h2>Good morning, {user?.name?.split(" ")[0] ?? "driver"}</h2>
-            <p className="lede">Open a stop to work it. Completed stops move to Archived.</p>
-          </div>
-          <Link className="secondary" to={`/log?date=${date}`}>
-            Independent Driver Log →
-          </Link>
+        <div className="progress">
+          <span style={{ width: `${stops.length === 0 ? 0 : Math.round((completed / stops.length) * 100)}%` }} />
         </div>
-        <RouteNotices />
-        <label htmlFor="day-date">Service date</label>
-        <input
-          id="day-date"
-          type="date"
-          value={date}
-          onChange={(event) => {
-            setParams({ date: event.target.value });
-          }}
-        />
-        <div className="driver-progress card">
-          <div className="progress-row">
-            <span>
-              <b>
-                {completed} of {stops.length}
-              </b>{" "}
-              {stops.length === 1 ? "stop" : "stops"} complete
-            </span>
-            <b>{stops.length === 0 ? "0%" : `${Math.round((completed / stops.length) * 100)}%`}</b>
-          </div>
-          <div className="progress">
-            <span
-              style={{
-                width: `${stops.length === 0 ? 0 : Math.round((completed / stops.length) * 100)}%`,
-              }}
-            />
-          </div>
-        </div>
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        {stops.length === 0 ? <p className="lede">No stops are assigned for this date.</p> : null}
-        {activeStops.length > 0 ? (
-          <button className="primary" type="button" disabled={busy} onClick={getStarted}>
-            Get started
-          </button>
-        ) : null}
-        {stops.length > 0 && completed === stops.length ? (
-          <section className="card stack day-log-cta">
-            <h2>All stops are complete</h2>
-            <p className="lede">
-              Next step: fill your <strong>Independent Driver Log</strong> (port or non-port) with ticket lines, then
-              submit it so the office can invoice.
-            </p>
-            <Link className="primary" to={`/log?date=${date}`}>
-              Open Independent Driver Log →
-            </Link>
-          </section>
-        ) : null}
-
-        <section className="stop-section">
-          <h2>Up next</h2>
-          {activeStops.length === 0 ? (
-            <p className="lede">
-              {stops.length === 0
-                ? "Nothing scheduled."
-                : completed > 0
-                  ? "No open stops left. Check Archived below, or open the Independent Driver Log."
-                  : "No open stops."}
-            </p>
-          ) : (
-            <div className="stop-list">
-              {activeStops.map((stop, index) => (
-                <StopCard
-                  key={stop.id}
-                  stop={stop}
-                  date={date}
-                  index={index}
-                  total={activeStops.length}
-                  busy={busy}
-                  onReorder={(direction) => reorderInList(activeStops, index, direction)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {archivedStops.length > 0 ? (
-          <section className="stop-section archived">
-            <h2>Archived</h2>
-            <p className="lede">Completed stops. Tap one to open it again.</p>
-            <div className="stop-list">
-              {archivedStops.map((stop, index) => (
-                <StopCard
-                  key={stop.id}
-                  stop={stop}
-                  date={date}
-                  index={index}
-                  total={archivedStops.length}
-                  busy={busy}
-                  onReorder={(direction) => reorderInList(archivedStops, index, direction)}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        <div className="day-log-footer">
-          <p>When the route is done, submit your Independent Driver Log for this date.</p>
+      </div>
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {dayComplete ? (
+        <section className="card stack day-log-cta">
+          <h2>All stops are complete</h2>
+          <p className="lede">This day is archived. Next: Independent Driver Log, then the office can invoice.</p>
           <Link className="primary" to={`/log?date=${date}`}>
-            Independent Driver Log →
+            Open Independent Driver Log →
           </Link>
+        </section>
+      ) : null}
+      {listStops.length === 0 && !dayComplete ? (
+        <p className="lede">No stops assigned for this date.</p>
+      ) : (
+        <div className="stop-list">
+          {listStops.map((stop, index) => (
+            <StopCard
+              key={stop.id}
+              stop={stop}
+              date={date}
+              index={index}
+              total={listStops.length}
+              busy={busy}
+              onReorder={(direction) => reorderInList(listStops, index, direction)}
+            />
+          ))}
         </div>
-      </main>
-    </div>
+      )}
+      {hiddenCompleted > 0 ? (
+        <p className="lede">
+          {hiddenCompleted} completed {hiddenCompleted === 1 ? "stop is" : "stops are"} hidden. Finish the rest, then
+          this day moves to Archived.
+        </p>
+      ) : null}
+      {!dayComplete && listStops.length > 0 ? (
+        <button
+          className="primary"
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            const stop = nextIncomplete(listStops);
+            if (stop) {
+              navigate(`/day/stop/${stop.id}?date=${date}`);
+            }
+          }}
+        >
+          Get started
+        </button>
+      ) : null}
+    </FieldShell>
   );
 }

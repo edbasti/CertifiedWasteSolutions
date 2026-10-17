@@ -58,6 +58,13 @@ export const stops = pgTable(
     sequence: integer("sequence").notNull(),
     customerName: text("customer_name").notNull(),
     address: text("address").notNull(),
+    serviceType: text("service_type", {
+      enum: ["remove", "delivery", "swap", "dump_and_return", "relocate"],
+    })
+      .notNull()
+      .default("remove"),
+    quantity: integer("quantity").notNull().default(1),
+    driverNotes: text("driver_notes").notNull().default(""),
     pickupDescription: text("pickup_description").notNull(),
     status: text("status", { enum: ["not_started", "en_route", "completed"] }).notNull(),
     createdAt: text("created_at").notNull(),

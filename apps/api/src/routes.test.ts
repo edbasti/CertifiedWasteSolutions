@@ -57,7 +57,9 @@ describe("route assignment", () => {
         driverUserId: seedIds.sam,
         serviceDate: "2026-10-06",
         customerId: seedIds.metro,
-        pickupDescription: "Cardboard",
+        serviceType: "remove",
+        quantity: 1,
+        driverNotes: "Cardboard",
       }),
     });
     expect(created.status).toBe(201);
@@ -70,7 +72,9 @@ describe("route assignment", () => {
         serviceDate: "2026-10-06",
         customerName: "Pop-up site",
         address: "9 Temporary Ln, Bayport",
-        pickupDescription: "Mixed load",
+        serviceType: "swap",
+        quantity: 2,
+        driverNotes: "Mixed load",
       }),
     });
     expect(second.status).toBe(201);

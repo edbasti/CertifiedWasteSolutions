@@ -4,7 +4,8 @@ import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { and, eq } from "drizzle-orm";
 import type { Context, Hono } from "hono";
-import type { DriverDay, DriverStop, StopStatus } from "@cws/shared";
+import type { DriverDay, DriverDaySummary, DriverStop, ServiceType, StopStatus } from "@cws/shared";
+import { isServiceType, stopStatuses } from "@cws/shared";
 import type { AppEnv } from "./app-env";
 import { requireUser } from "./auth";
 import type { CwsDatabase } from "./db/client";
@@ -12,17 +13,10 @@ import { routeDays, statusEvents, stopNotes, stopPhotos, stops } from "./db/sche
 import { validServiceDate } from "./stop-source";
 
 const maxPhotoBytes = 6_000_000;
-const nextStatus: Record<StopStatus, StopStatus | null> = {
-  not_started: "en_route",
-  en_route: "completed",
-  completed: null,
-};
 
-const previousStatus: Record<StopStatus, StopStatus | null> = {
-  not_started: null,
-  en_route: "not_started",
-  completed: "en_route",
-};
+function isStopStatus(value: unknown): value is StopStatus {
+  return typeof value === "string" && (stopStatuses as readonly string[]).includes(value);
+}
 
 export function photoDirectory() {
   if (process.env.PHOTO_DIR) {
@@ -96,11 +90,29 @@ export async function loadDriverDay(db: CwsDatabase, driverUserId: string, servi
   const notes = await db.select().from(stopNotes);
   const photos = await db.select().from(stopPhotos);
   const history = await db.select().from(statusEvents);
-  const stopsForDay: DriverStop[] = dayStops.map((stop) => ({
+  const stopsForDay: DriverStop[] = dayStops.map((stop) => mapDriverStop(stop, notes, photos, history));
+
+  return { date: serviceDate, routeId: route.id, stops: stopsForDay };
+}
+
+function stopServiceType(value: string): ServiceType {
+  return isServiceType(value) ? value : "remove";
+}
+
+function mapDriverStop(
+  stop: typeof stops.$inferSelect,
+  notes: (typeof stopNotes.$inferSelect)[],
+  photos: (typeof stopPhotos.$inferSelect)[],
+  history: (typeof statusEvents.$inferSelect)[],
+): DriverStop {
+  return {
     id: stop.id,
     sequence: stop.sequence,
     customerName: stop.customerName,
     address: stop.address,
+    serviceType: stopServiceType(stop.serviceType),
+    quantity: stop.quantity,
+    driverNotes: stop.driverNotes,
     pickupDescription: stop.pickupDescription,
     status: stop.status,
     notes: notes
@@ -120,13 +132,37 @@ export async function loadDriverDay(db: CwsDatabase, driverUserId: string, servi
         toStatus: event.toStatus,
         changedAt: event.changedAt,
       })),
-  }));
+  };
+}
 
-  return { date: serviceDate, routeId: route.id, stops: stopsForDay };
+async function listDriverDays(db: CwsDatabase, driverUserId: string): Promise<DriverDaySummary[]> {
+  const days = await db.select().from(routeDays).where(eq(routeDays.driverUserId, driverUserId));
+  const dayStops = await db.select().from(stops);
+  return days
+    .map((day) => {
+      const forDay = dayStops.filter((stop) => stop.routeDayId === day.id);
+      const completedCount = forDay.filter((stop) => stop.status === "completed").length;
+      return {
+        serviceDate: day.serviceDate,
+        routeId: day.id,
+        stopCount: forDay.length,
+        completedCount,
+        completed: forDay.length > 0 && completedCount === forDay.length,
+      };
+    })
+    .sort((a, b) => b.serviceDate.localeCompare(a.serviceDate));
 }
 
 export function registerDay(app: Hono<AppEnv>, db: CwsDatabase) {
   const signedIn = requireUser(db);
+
+  app.get("/api/day/summary", signedIn, async (c) => {
+    const user = c.get("user");
+    if (user.role !== "driver") {
+      return c.json({ error: "Drivers open the route day." }, 403);
+    }
+    return c.json({ days: await listDriverDays(db, user.id) });
+  });
 
   app.get("/api/day", signedIn, async (c) => {
     const user = c.get("user");
@@ -178,15 +214,12 @@ export function registerDay(app: Hono<AppEnv>, db: CwsDatabase) {
       return c.json({ error: "Stop not found." }, 404);
     }
     const body = await readJson(c);
-    const requested = body?.status;
-    const forward = nextStatus[owned.stop.status];
-    const back = previousStatus[owned.stop.status];
-    const status = requested === forward || requested === back ? (requested as StopStatus) : null;
-    if (!status) {
-      if (!forward && !back) {
-        return c.json({ error: "This stop cannot change status." }, 409);
-      }
-      return c.json({ error: "Update the stop one step at a time." }, 409);
+    if (!isStopStatus(body?.status)) {
+      return c.json({ error: "Choose not started, en route, or completed." }, 400);
+    }
+    const status = body.status;
+    if (status === owned.stop.status) {
+      return c.json(await loadDriverDay(db, user.id, owned.route.serviceDate));
     }
     const now = new Date().toISOString();
     await db.update(stops).set({ status }).where(eq(stops.id, owned.stop.id));

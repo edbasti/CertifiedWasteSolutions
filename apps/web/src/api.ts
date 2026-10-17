@@ -5,7 +5,9 @@ import type {
   CustomerAccount,
   DriverAccount,
   DriverDay,
+  DriverDaySummary,
   DriverLog,
+  ServiceType,
   DriverLogLine,
   CompletedStopReport,
   DispatchImportPreview,
@@ -157,7 +159,9 @@ export function addRouteStop(input: {
   customerId?: string;
   customerName?: string;
   address?: string;
-  pickupDescription: string;
+  serviceType: ServiceType;
+  quantity: number;
+  driverNotes: string;
 }) {
   return request<{ stop: AssignedStop }>("/api/routes/stops", {
     method: "POST",
@@ -181,6 +185,10 @@ export function reorderRoute(routeId: string, stopIds: string[]) {
 
 export function removeStop(stopId: string) {
   return request<{ ok: true }>(`/api/stops/${stopId}`, { method: "DELETE" });
+}
+
+export function listDriverDays() {
+  return request<{ days: DriverDaySummary[] }>("/api/day/summary");
 }
 
 export function loadDay(date: string) {

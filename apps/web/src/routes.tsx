@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
-import type { AssignedRoute, AssignedStop, CustomerAccount, RouteImportResult, StopSourceInfo, StopStatus } from "@cws/shared";
+import {
+  serviceTypeLabels,
+  serviceTypes,
+  type AssignedRoute,
+  type AssignedStop,
+  type CustomerAccount,
+  type RouteImportResult,
+  type ServiceType,
+  type StopSourceInfo,
+  type StopStatus,
+} from "@cws/shared";
 import {
   addRouteStop,
   ApiError,
@@ -150,6 +160,8 @@ export function RoutesPanel() {
       return (
         stop.customerName.toLowerCase().includes(query) ||
         stop.address.toLowerCase().includes(query) ||
+        serviceTypeLabels[stop.serviceType].toLowerCase().includes(query) ||
+        stop.driverNotes.toLowerCase().includes(query) ||
         stop.pickupDescription.toLowerCase().includes(query) ||
         route.driverName.toLowerCase().includes(query)
       );
@@ -252,7 +264,10 @@ export function RoutesPanel() {
                       <div>
                         {stop.sequence}. {stop.customerName}
                         <span className="address">{stop.address}</span>
-                        <span className="subtext">{stop.pickupDescription}</span>
+                        <span className="subtext">
+                          {serviceTypeLabels[stop.serviceType]} · Qty {stop.quantity}
+                          {stop.driverNotes ? ` · ${stop.driverNotes}` : ""}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -366,7 +381,10 @@ function StopDetails({
   return (
     <div className="stack">
       <p className="lede">{stop.address}</p>
-      <p className="lede">Pickup: {stop.pickupDescription}</p>
+      <p className="lede">
+        {serviceTypeLabels[stop.serviceType]} · Qty {stop.quantity}
+      </p>
+      {stop.driverNotes ? <p className="lede">Driver notes: {stop.driverNotes}</p> : null}
       <p>
         <span className={statusClass(stop.status)}>{statusLabels[stop.status]}</span>
         <span className="subtext"> · {route.driverName}</span>
@@ -486,7 +504,9 @@ function AddStop({
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
-  const [pickupDescription, setPickupDescription] = useState("");
+  const [serviceType, setServiceType] = useState<ServiceType>("remove");
+  const [quantity, setQuantity] = useState("1");
+  const [driverNotes, setDriverNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -498,6 +518,11 @@ function AddStop({
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const qty = Number(quantity);
+    if (!Number.isInteger(qty) || qty < 1) {
+      setError("Quantity must be a whole number of at least 1.");
+      return;
+    }
     try {
       await addRouteStop({
         driverUserId,
@@ -505,14 +530,18 @@ function AddStop({
         customerId: customerId || undefined,
         customerName: customerId ? undefined : customerName,
         address: customerId ? undefined : address,
-        pickupDescription,
+        serviceType,
+        quantity: qty,
+        driverNotes,
       });
       const location = customers.find((customer) => customer.id === customerId);
       onAdded(location?.name ?? customerName);
       setCustomerId("");
       setCustomerName("");
       setAddress("");
-      setPickupDescription("");
+      setServiceType("remove");
+      setQuantity("1");
+      setDriverNotes("");
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "Could not add the stop.");
     }
@@ -539,18 +568,41 @@ function AddStop({
       </select>
       {customerId ? null : (
         <>
-          <label htmlFor="route-customer">Customer name</label>
+          <label htmlFor="route-customer">Company / customer name</label>
           <input id="route-customer" value={customerName} onChange={(event) => setCustomerName(event.target.value)} required />
           <label htmlFor="route-address">Address</label>
           <input id="route-address" value={address} onChange={(event) => setAddress(event.target.value)} required />
         </>
       )}
-      <label htmlFor="route-pickup">Pickup</label>
-      <input
-        id="route-pickup"
-        value={pickupDescription}
-        onChange={(event) => setPickupDescription(event.target.value)}
+      <label htmlFor="route-service-type">Service type</label>
+      <select
+        id="route-service-type"
+        value={serviceType}
+        onChange={(event) => setServiceType(event.target.value as ServiceType)}
         required
+      >
+        {serviceTypes.map((type) => (
+          <option key={type} value={type}>
+            {serviceTypeLabels[type]}
+          </option>
+        ))}
+      </select>
+      <label htmlFor="route-quantity">Quantity</label>
+      <input
+        id="route-quantity"
+        type="number"
+        min={1}
+        step={1}
+        value={quantity}
+        onChange={(event) => setQuantity(event.target.value)}
+        required
+      />
+      <label htmlFor="route-driver-notes">Notes for driver</label>
+      <input
+        id="route-driver-notes"
+        value={driverNotes}
+        onChange={(event) => setDriverNotes(event.target.value)}
+        placeholder="e.g. gate code 456"
       />
       {error ? (
         <p className="form-error" role="alert">

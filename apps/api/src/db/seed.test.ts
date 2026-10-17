@@ -39,7 +39,10 @@ describe("operations seed", () => {
     ]);
     expect(day.find((stop) => stop.id === seedIds.stopHarbor)).toMatchObject({
       status: "not_started",
-      pickupDescription: "Mixed recycling",
+      serviceType: "dump_and_return",
+      quantity: 1,
+      driverNotes: "Mixed recycling",
+      pickupDescription: "Dump and Return · Qty 1 · Mixed recycling",
     });
     expect(day.find((stop) => stop.id === seedIds.stopGreenline)?.status).toBe("en_route");
   });

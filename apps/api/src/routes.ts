@@ -1,7 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { Context, Hono } from "hono";
-import type { AssignedRoute, AssignedStop, RouteImportResult, RouteSource, StopStatus } from "@cws/shared";
+import {
+  composePickupDescription,
+  isServiceType,
+  type AssignedRoute,
+  type AssignedStop,
+  type RouteImportResult,
+  type RouteSource,
+  type ServiceType,
+  type StopStatus,
+} from "@cws/shared";
 import type { AppEnv } from "./app-env";
 import { requireRole, requireUser } from "./auth";
 import type { CwsDatabase } from "./db/client";
@@ -33,12 +42,16 @@ function toStop(
   stop: typeof stops.$inferSelect,
   detail?: Pick<AssignedStop, "notes" | "photos" | "history">,
 ): AssignedStop {
+  const serviceType: ServiceType = isServiceType(stop.serviceType) ? stop.serviceType : "remove";
   return {
     id: stop.id,
     sequence: stop.sequence,
     customerId: stop.customerId,
     customerName: stop.customerName,
     address: stop.address,
+    serviceType,
+    quantity: stop.quantity,
+    driverNotes: stop.driverNotes,
     pickupDescription: stop.pickupDescription,
     status: stop.status,
     notes: detail?.notes ?? [],
@@ -171,12 +184,22 @@ export function registerRoutes(app: Hono<AppEnv>, db: CwsDatabase) {
     const driverUserId = textField(body, "driverUserId");
     const serviceDate = textField(body, "serviceDate");
     const customerId = textField(body, "customerId");
-    const pickupDescription = textField(body, "pickupDescription");
+    const serviceTypeRaw = textField(body, "serviceType");
+    const driverNotes = textField(body, "driverNotes");
+    const quantityRaw = body.quantity;
+    const quantity =
+      typeof quantityRaw === "number"
+        ? quantityRaw
+        : typeof quantityRaw === "string"
+          ? Number(quantityRaw)
+          : NaN;
     let customerName = textField(body, "customerName");
     let address = textField(body, "address");
-    if (!driverUserId || !validServiceDate(serviceDate) || !pickupDescription) {
-      return c.json({ error: "Choose a driver, date, and pickup." }, 400);
+    if (!driverUserId || !validServiceDate(serviceDate) || !isServiceType(serviceTypeRaw) || !Number.isInteger(quantity) || quantity < 1) {
+      return c.json({ error: "Choose a driver, date, service type, and quantity." }, 400);
     }
+    const serviceType = serviceTypeRaw;
+    const pickupDescription = composePickupDescription(serviceType, quantity, driverNotes);
 
     const [driver] = await db.select().from(users).where(eq(users.id, driverUserId));
     if (!driver || driver.role !== "driver" || !driver.active) {
@@ -224,6 +247,9 @@ export function registerRoutes(app: Hono<AppEnv>, db: CwsDatabase) {
         sequence,
         customerName,
         address,
+        serviceType,
+        quantity,
+        driverNotes,
         pickupDescription,
         status: "not_started" satisfies StopStatus,
         createdAt: now,
