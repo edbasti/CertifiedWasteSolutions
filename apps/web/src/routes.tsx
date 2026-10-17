@@ -261,10 +261,13 @@ export function RoutesPanel() {
                   <td>
                     <div className="customer">
                       <div className="customer-mark">{initials(stop.customerName)}</div>
-                      <div>
-                        {stop.sequence}. {stop.customerName}
-                        <span className="address">{stop.address}</span>
+                      <div className="customer-copy">
+                        <span className="customer-title">
+                          {stop.sequence}. {stop.customerName}
+                        </span>
                         <span className="subtext">
+                          {stop.address}
+                          {" · "}
                           {serviceTypeLabels[stop.serviceType]} · Qty {stop.quantity}
                           {stop.driverNotes ? ` · ${stop.driverNotes}` : ""}
                         </span>

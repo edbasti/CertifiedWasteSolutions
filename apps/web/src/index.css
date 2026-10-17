@@ -545,33 +545,51 @@ a {
   letter-spacing: 0.8px;
   text-align: left;
   font-weight: 800;
-  padding: 14px 20px 10px;
+  padding: 8px 12px 6px;
 }
 
 .route-table td {
   border-top: 1px solid #edf1f6;
-  padding: 13px 20px;
+  padding: 6px 12px;
   font-size: 12px;
   vertical-align: middle;
+  line-height: 1.25;
 }
 
 .customer {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   font-weight: 700;
+  min-width: 0;
 }
 
 .customer-mark {
-  width: 27px;
-  height: 27px;
-  border-radius: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
-  font-size: 11px;
+  font-size: 10px;
   background: var(--forest-soft);
   color: var(--brand);
   flex: 0 0 auto;
+}
+
+.customer-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.customer-title {
+  display: block;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .address,
@@ -580,15 +598,23 @@ a {
   color: var(--muted);
   font-size: 10px;
   font-weight: 400;
-  margin-top: 3px;
+  margin-top: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.route-table .subtext {
+  max-width: 42rem;
 }
 
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  border-radius: 20px;
-  padding: 6px 9px;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 3px 7px;
   font-size: 10px;
   font-weight: 800;
   white-space: nowrap;
