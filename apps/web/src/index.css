@@ -186,12 +186,19 @@ a {
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
   background: var(--sidebar);
   color: #d7e4f5;
   padding: 26px 18px;
   display: flex;
   flex-direction: column;
   gap: 28px;
+  box-sizing: border-box;
 }
 
 .brand {
