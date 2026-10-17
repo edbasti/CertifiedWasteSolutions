@@ -209,8 +209,8 @@ export function LogsPanel() {
       </p>
       {logs.length === 0 ? (
         <p className="lede">
-          No submitted Independent Driver Logs yet. Sign in as a driver → finish stops → open Independent Driver Log →
-          Submit. Then it appears here for review.
+          No submitted Independent Driver Logs yet. If a driver only used Save draft, it stays on their side until they
+          press Submit Independent Driver Log.
         </p>
       ) : null}
       <ul className="driver-list">

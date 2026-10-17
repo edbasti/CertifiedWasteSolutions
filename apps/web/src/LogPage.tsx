@@ -187,7 +187,7 @@ export function LogPage() {
       const result = await saveLog(payload());
       setRecord(result.log);
       setLines(fromLog(result.log));
-      setNotice("Draft saved.");
+      setNotice("Draft saved. The office cannot see this until you Submit.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save the draft.");
     } finally {
@@ -204,7 +204,7 @@ export function LogPage() {
       const result = await submitLog(saved.log.id);
       setRecord(result.log);
       setLines(fromLog(result.log));
-      setNotice("Submitted. A manager completes the payment date.");
+      setNotice("Submitted. Managers and admins can open it under Driver Logs.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not submit the log.");
     } finally {
@@ -234,14 +234,20 @@ export function LogPage() {
             <p className="eyebrow">End of day paperwork</p>
             <h2>Independent Driver Log</h2>
             <p className="lede">
-              Choose port or non-port, enter ticket lines and prices, then submit. The office reviews this under Driver
-              Logs — not under Reports.
+              {locked
+                ? "Submitted — managers and admins can open this under Driver Logs."
+                : "Save draft keeps it private. Only Submit sends it to the office under Driver Logs."}
             </p>
           </div>
           <Link className="secondary" to={`/day?date=${date}`}>
             ← Back to stops
           </Link>
         </div>
+        {record ? (
+          <p className={locked ? "status complete" : "status pending"} style={{ width: "fit-content" }}>
+            {locked ? "Submitted" : "Draft — not visible to admin yet"}
+          </p>
+        ) : null}
         <label htmlFor="log-date">Service date</label>
         <input
           id="log-date"
