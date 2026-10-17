@@ -619,20 +619,32 @@ a {
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   border-radius: 999px;
-  padding: 2px 6px;
+  padding: 0 5px;
   font-size: 9px;
   font-weight: 800;
   white-space: nowrap;
+  line-height: 16px;
+  min-height: 16px;
+  box-sizing: border-box;
 }
 
 .status::before {
   content: "";
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background: currentColor;
+  flex: 0 0 auto;
+}
+
+.route-table .status,
+.day-card .status {
+  line-height: 14px;
+  min-height: 14px;
+  padding: 0 4px;
+  font-size: 8px;
 }
 
 .status.complete {
