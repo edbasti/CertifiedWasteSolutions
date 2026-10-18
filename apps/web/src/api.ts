@@ -150,15 +150,25 @@ export function logoutRequest() {
 }
 
 export async function currentUser(): Promise<PublicUser | null> {
-  const response = await fetch("/api/me", { credentials: "include" });
-  if (response.status === 401) {
-    return null;
+  try {
+    const response = await fetch("/api/me", {
+      credentials: "include",
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (response.status === 401) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error("Could not load the session.");
+    }
+    const body = (await response.json()) as { user: PublicUser };
+    return body.user;
+  } catch (error) {
+    if (isAbortError(error)) {
+      return null;
+    }
+    throw error;
   }
-  if (!response.ok) {
-    throw new Error("Could not load the session.");
-  }
-  const body = (await response.json()) as { user: PublicUser };
-  return body.user;
 }
 
 export function listDrivers() {

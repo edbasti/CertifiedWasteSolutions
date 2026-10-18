@@ -39,11 +39,14 @@ function loadLocalEnv() {
 
 loadLocalEnv();
 
-export function databaseUrl() {
-  let url = process.env.DATABASE_URL?.trim() ?? "";
+function cleanDatabaseUrl(raw: string) {
+  let url = raw.trim();
   // Common Vercel mistake: pasting the whole .env line into the value field.
   if (url.startsWith("DATABASE_URL=")) {
     url = url.slice("DATABASE_URL=".length).trim();
+  }
+  if (url.startsWith("DATABASE_POOL_URL=")) {
+    url = url.slice("DATABASE_POOL_URL=".length).trim();
   }
   if (
     (url.startsWith('"') && url.endsWith('"')) ||
@@ -51,9 +54,17 @@ export function databaseUrl() {
   ) {
     url = url.slice(1, -1);
   }
+  return url;
+}
+
+export function databaseUrl() {
+  // Prefer the Supabase pooler on Vercel — direct :5432 links often hang from serverless.
+  const pool = cleanDatabaseUrl(process.env.DATABASE_POOL_URL ?? "");
+  const primary = cleanDatabaseUrl(process.env.DATABASE_URL ?? "");
+  const url = process.env.VERCEL && pool ? pool : primary || pool;
   if (!url) {
     throw new Error(
-      "DATABASE_URL is required. Use the Postgres connection string from Supabase Project Settings → Database.",
+      "DATABASE_URL is required. On Vercel, set DATABASE_POOL_URL to the Supabase pooler URI (port 6543).",
     );
   }
   return url;
@@ -65,10 +76,11 @@ export function openDatabase(connectionString = databaseUrl()) {
     max: process.env.VERCEL ? 1 : 10,
     prepare: false,
     idle_timeout: 20,
-    connect_timeout: 10,
+    // Fail fast instead of leaving the login page spinning.
+    connect_timeout: process.env.VERCEL ? 4 : 10,
     ...(process.env.VERCEL ? { max_lifetime: 60 * 5 } : {}),
     connection: {
-      statement_timeout: 12_000,
+      statement_timeout: 8_000,
     },
   });
   const db = drizzlePostgres(client, { schema });

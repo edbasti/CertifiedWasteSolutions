@@ -4,18 +4,13 @@ import type { Context, Hono, MiddlewareHandler } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { PublicUser, UserRole } from "@cws/shared";
 import type { CwsDatabase } from "./db/client";
-import { hashPassword, verifyPassword } from "./db/password";
+import { dummyPasswordHash, hashPassword, passwordNeedsRehash, verifyPassword } from "./db/password";
 import { sessions, users } from "./db/schema";
 import type { AppEnv } from "./app-env";
 
 const sessionCookie = "cws_session";
 const sessionMs = 7 * 24 * 60 * 60 * 1000;
-/** Lazy so cold starts do not block on scrypt before the first login. */
-let dummyHashPromise: Promise<string> | null = null;
-function dummyHash() {
-  dummyHashPromise ??= hashPassword("not-a-real-password");
-  return dummyHashPromise;
-}
+const loginBudgetMs = 12_000;
 
 function toPublicUser(user: typeof users.$inferSelect): PublicUser {
   return {
@@ -133,19 +128,32 @@ export function registerAuth(app: Hono<AppEnv>, db: CwsDatabase) {
     if (!email || !password) {
       return c.json({ error: "Enter an email and password." }, 400);
     }
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    // Async scrypt keeps the isolate responsive under concurrent sign-in attempts.
-    const passwordOk = await verifyPassword(password, user?.passwordHash ?? (await dummyHash()));
 
-    if (!user || !passwordOk) {
-      return c.json({ error: "Email or password is incorrect." }, 401);
+    const deadline = Date.now() + loginBudgetMs;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      if (Date.now() > deadline) {
+        return c.json({ error: "Sign-in is slow right now. Wait a few seconds and try once." }, 503);
+      }
+      const passwordOk = await verifyPassword(password, user?.passwordHash ?? dummyPasswordHash);
+      if (Date.now() > deadline) {
+        return c.json({ error: "Sign-in is slow right now. Wait a few seconds and try once." }, 503);
+      }
+      if (!user || !passwordOk) {
+        return c.json({ error: "Email or password is incorrect." }, 401);
+      }
+      if (!user.active) {
+        return c.json({ error: "This account is inactive." }, 401);
+      }
+      if (passwordNeedsRehash(user.passwordHash)) {
+        await db.update(users).set({ passwordHash: await hashPassword(password) }).where(eq(users.id, user.id));
+      }
+      await startSession(c, db, user.id);
+      return c.json({ user: toPublicUser(user) });
+    } catch (error) {
+      console.error("login failed", error);
+      return c.json({ error: "Could not reach the database. Try again in a moment." }, 503);
     }
-    if (!user.active) {
-      return c.json({ error: "This account is inactive." }, 401);
-    }
-
-    await startSession(c, db, user.id);
-    return c.json({ user: toPublicUser(user) });
   });
 
   app.post("/api/logout", async (c) => {
