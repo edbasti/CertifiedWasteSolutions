@@ -135,7 +135,7 @@ export function LogsPanel() {
   const editable = selected !== null && selected.status !== "submitted";
 
   async function complete() {
-    if (!selected) {
+    if (!selected || busy) {
       return;
     }
     setBusy(true);
@@ -154,7 +154,7 @@ export function LogsPanel() {
   }
 
   async function saveCorrection() {
-    if (!selected) {
+    if (!selected || busy) {
       return;
     }
     setBusy(true);
@@ -174,6 +174,9 @@ export function LogsPanel() {
   }
 
   async function send(invoiceId: string) {
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);

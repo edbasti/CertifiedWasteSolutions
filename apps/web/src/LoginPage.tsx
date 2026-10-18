@@ -19,12 +19,18 @@ export function LoginPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
-    const message = await login(email, password);
-    setSubmitting(false);
-    if (message) {
-      setError(message);
+    try {
+      const message = await login(email, password);
+      if (message) {
+        setError(message);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 

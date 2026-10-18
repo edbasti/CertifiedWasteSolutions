@@ -61,12 +61,14 @@ export function databaseUrl() {
 
 export function openDatabase(connectionString = databaseUrl()) {
   const client = postgres(connectionString, {
+    // On Vercel, one connection per isolate — stacking sockets from rapid clicks causes hangs.
     max: process.env.VERCEL ? 1 : 10,
     prepare: false,
     idle_timeout: 20,
-    connect_timeout: 5,
+    connect_timeout: 10,
+    ...(process.env.VERCEL ? { max_lifetime: 60 * 5 } : {}),
     connection: {
-      statement_timeout: 15_000,
+      statement_timeout: 12_000,
     },
   });
   const db = drizzlePostgres(client, { schema });

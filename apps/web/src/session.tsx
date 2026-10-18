@@ -20,6 +20,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState(true);
   const loadGeneration = useRef(0);
+  const loginInFlight = useRef<Promise<string | null> | null>(null);
+  const logoutInFlight = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -63,34 +65,50 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    try {
-      const result = await loginRequest(email, password);
-      sessionStorage.removeItem(signedOutFlag);
-      loadGeneration.current += 1;
-      setUser(result.user);
-      setLoading(false);
-      return null;
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Could not sign in.";
-      return message;
+    if (loginInFlight.current) {
+      return loginInFlight.current;
     }
+    loginInFlight.current = (async () => {
+      try {
+        const result = await loginRequest(email, password);
+        sessionStorage.removeItem(signedOutFlag);
+        loadGeneration.current += 1;
+        setUser(result.user);
+        setLoading(false);
+        return null;
+      } catch (error) {
+        const message = error instanceof ApiError ? error.message : "Could not sign in.";
+        return message;
+      } finally {
+        loginInFlight.current = null;
+      }
+    })();
+    return loginInFlight.current;
   }
 
   async function logout() {
-    // Invalidate any in-flight /api/me so it cannot restore the previous user.
-    loadGeneration.current += 1;
-    setLoading(false);
-    setUser(null);
-    sessionStorage.setItem(signedOutFlag, "1");
-    try {
-      await logoutRequest();
-      sessionStorage.removeItem(signedOutFlag);
-    } catch {
-      // Keep the flag so the next page load retries clearing the server session.
+    if (logoutInFlight.current) {
+      return logoutInFlight.current;
     }
-    if (window.location.pathname !== "/login") {
-      window.location.assign("/login");
-    }
+    logoutInFlight.current = (async () => {
+      // Invalidate any in-flight /api/me so it cannot restore the previous user.
+      loadGeneration.current += 1;
+      setLoading(false);
+      setUser(null);
+      sessionStorage.setItem(signedOutFlag, "1");
+      try {
+        await logoutRequest();
+        sessionStorage.removeItem(signedOutFlag);
+      } catch {
+        // Keep the flag so the next page load retries clearing the server session.
+      }
+      if (window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
+    })().finally(() => {
+      logoutInFlight.current = null;
+    });
+    return logoutInFlight.current;
   }
 
   return <SessionContext.Provider value={{ user, loading, login, logout }}>{children}</SessionContext.Provider>;

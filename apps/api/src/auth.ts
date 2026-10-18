@@ -10,7 +10,12 @@ import type { AppEnv } from "./app-env";
 
 const sessionCookie = "cws_session";
 const sessionMs = 7 * 24 * 60 * 60 * 1000;
-const dummyHash = hashPassword("not-a-real-password");
+/** Lazy so cold starts do not block on scrypt before the first login. */
+let dummyHashPromise: Promise<string> | null = null;
+function dummyHash() {
+  dummyHashPromise ??= hashPassword("not-a-real-password");
+  return dummyHashPromise;
+}
 
 function toPublicUser(user: typeof users.$inferSelect): PublicUser {
   return {
@@ -125,8 +130,12 @@ export function registerAuth(app: Hono<AppEnv>, db: CwsDatabase) {
 
     const email = field(body, "email").toLowerCase();
     const password = field(body, "password");
-    const [user] = email ? await db.select().from(users).where(eq(users.email, email)) : [];
-    const passwordOk = verifyPassword(password, user?.passwordHash ?? dummyHash);
+    if (!email || !password) {
+      return c.json({ error: "Enter an email and password." }, 400);
+    }
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    // Async scrypt keeps the isolate responsive under concurrent sign-in attempts.
+    const passwordOk = await verifyPassword(password, user?.passwordHash ?? (await dummyHash()));
 
     if (!user || !passwordOk) {
       return c.json({ error: "Email or password is incorrect." }, 401);
@@ -193,7 +202,7 @@ export function registerAuth(app: Hono<AppEnv>, db: CwsDatabase) {
       id: randomUUID(),
       name,
       email,
-      passwordHash: hashPassword(password),
+      passwordHash: await hashPassword(password),
       role: "driver" as const,
       companyName: companyName || null,
       active: true,
@@ -227,7 +236,7 @@ export function registerAuth(app: Hono<AppEnv>, db: CwsDatabase) {
       return c.json({ error: "Driver not found." }, 404);
     }
 
-    await db.update(users).set({ passwordHash: hashPassword(password) }).where(eq(users.id, driver.id));
+    await db.update(users).set({ passwordHash: await hashPassword(password) }).where(eq(users.id, driver.id));
     await db.delete(sessions).where(eq(sessions.userId, driver.id));
     return c.json({ ok: true });
   });

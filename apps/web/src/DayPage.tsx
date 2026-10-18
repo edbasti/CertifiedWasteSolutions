@@ -392,6 +392,9 @@ export function DayStopsPage() {
   const hiddenCompleted = dayComplete ? 0 : completed;
 
   async function run(action: () => Promise<DriverDay>) {
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

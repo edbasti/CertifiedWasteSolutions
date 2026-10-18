@@ -28,7 +28,7 @@ describe("operations seed", () => {
     expect(people.filter((person) => person.role === "driver")).toHaveLength(2);
     expect(people.filter((person) => person.role === "manager").map((person) => person.name)).toEqual(["Chino"]);
     expect(jordan?.role).toBe("admin");
-    expect(jordan && verifyPassword(demoPassword, jordan.passwordHash)).toBe(true);
+    expect(jordan && (await verifyPassword(demoPassword, jordan.passwordHash))).toBe(true);
 
     const day = await db.select().from(stops).orderBy(stops.sequence);
     expect(day.map((stop) => stop.customerName)).toEqual([

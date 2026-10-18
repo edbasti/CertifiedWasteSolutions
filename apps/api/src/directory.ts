@@ -314,7 +314,7 @@ export function registerDirectory(app: Hono<AppEnv>, db: CwsDatabase) {
             name,
             companyName: companyIndex === -1 ? match.companyName : companyName,
             active: active ?? match.active,
-            ...(password ? { passwordHash: hashPassword(password) } : {}),
+            ...(password ? { passwordHash: await hashPassword(password) } : {}),
           })
           .where(eq(users.id, match.id));
         if (password || active === false) {
@@ -326,7 +326,7 @@ export function registerDirectory(app: Hono<AppEnv>, db: CwsDatabase) {
           id: randomUUID(),
           name,
           email,
-          passwordHash: hashPassword(password),
+          passwordHash: await hashPassword(password),
           role: "driver",
           companyName,
           active: active ?? true,

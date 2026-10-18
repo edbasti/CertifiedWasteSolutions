@@ -10,7 +10,8 @@
   ],
   "functions": {
     "api/index.js": {
-      "includeFiles": "apps/api/drizzle/**"
+      "includeFiles": "apps/api/drizzle/**",
+      "maxDuration": 30
     }
   }
 }

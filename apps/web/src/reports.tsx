@@ -41,6 +41,9 @@ export function ReportsPanel() {
   const [busy, setBusy] = useState(false);
 
   async function run(filters: { driver: string; customer: string; from: string; to: string }) {
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

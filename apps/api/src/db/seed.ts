@@ -26,7 +26,7 @@ export const seedIds = {
 const createdAt = "2026-09-30T15:00:00.000Z";
 
 export async function resetAndSeed(db: CwsDatabase) {
-  const passwordHash = hashPassword(demoPassword);
+  const passwordHash = await hashPassword(demoPassword);
 
   await db.transaction(async (tx) => {
     for (const table of [

@@ -62,6 +62,9 @@ export function StopPage() {
   const stop = day?.stops.find((item) => item.id === stopId) ?? null;
 
   async function run(action: () => Promise<DriverDay>) {
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

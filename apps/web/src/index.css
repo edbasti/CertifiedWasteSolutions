@@ -49,6 +49,15 @@ textarea {
   font: inherit;
 }
 
+/* While a mutating API call is in flight, block extra primary/submit clicks app-wide. */
+html[data-api-busy] button.primary,
+html[data-api-busy] button[type="submit"],
+html[data-api-busy] form button.secondary {
+  pointer-events: none;
+  opacity: 0.72;
+  cursor: wait;
+}
+
 button {
   cursor: pointer;
 }

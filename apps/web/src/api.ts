@@ -28,37 +28,120 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    credentials: "include",
-    headers: {
-      ...(init?.body && !(init.body instanceof FormData) ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  const text = await response.text();
-  let data: (T & { error?: string }) | undefined;
-  if (text) {
-    try {
-      data = JSON.parse(text) as T & { error?: string };
-    } catch {
-      throw new ApiError(response.ok ? "Invalid response from the server." : "Something went wrong.");
+let mutatingCount = 0;
+const inflightMutations = new Map<string, Promise<unknown>>();
+
+function setDocumentBusy(active: boolean) {
+  if (typeof document === "undefined") {
+    return;
+  }
+  document.documentElement.toggleAttribute("data-api-busy", active);
+}
+
+function beginMutation() {
+  mutatingCount += 1;
+  if (mutatingCount === 1) {
+    setDocumentBusy(true);
+  }
+}
+
+function endMutation() {
+  mutatingCount = Math.max(0, mutatingCount - 1);
+  if (mutatingCount === 0) {
+    setDocumentBusy(false);
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return error.name === "AbortError" || error.name === "TimeoutError" || /aborted|timeout/i.test(error.message);
+}
+
+type RequestInitWithTimeout = RequestInit & { timeoutMs?: number };
+
+async function request<T>(path: string, init?: RequestInitWithTimeout): Promise<T> {
+  const method = (init?.method ?? "GET").toUpperCase();
+  const isMutating = method !== "GET" && method !== "HEAD";
+  const { timeoutMs, signal: providedSignal, ...fetchInit } = init ?? {};
+  const mutationKey = isMutating
+    ? `${method}:${path}:${typeof fetchInit.body === "string" ? fetchInit.body : ""}`
+    : "";
+
+  if (mutationKey) {
+    const existing = inflightMutations.get(mutationKey);
+    if (existing) {
+      return existing as Promise<T>;
     }
   }
 
-  if (!response.ok) {
-    throw new ApiError(data?.error ?? "Something went wrong.");
-  }
+  const controller = timeoutMs && !providedSignal ? new AbortController() : null;
+  const timer = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : 0;
+  const signal = providedSignal ?? controller?.signal;
 
-  return data as T;
+  const run = (async () => {
+    if (isMutating) {
+      beginMutation();
+    }
+    try {
+      const response = await fetch(path, {
+        ...fetchInit,
+        credentials: "include",
+        signal,
+        headers: {
+          ...(fetchInit.body && !(fetchInit.body instanceof FormData) ? { "content-type": "application/json" } : {}),
+          ...fetchInit.headers,
+        },
+      });
+      const text = await response.text();
+      let data: (T & { error?: string }) | undefined;
+      if (text) {
+        try {
+          data = JSON.parse(text) as T & { error?: string };
+        } catch {
+          throw new ApiError(response.ok ? "Invalid response from the server." : "Something went wrong.");
+        }
+      }
+
+      if (!response.ok) {
+        throw new ApiError(data?.error ?? "Something went wrong.");
+      }
+
+      return data as T;
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw new ApiError(
+          path === "/api/login"
+            ? "Sign-in timed out. Wait a few seconds, then try once."
+            : "That request timed out. Wait a moment and try once.",
+        );
+      }
+      throw error;
+    } finally {
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+      if (isMutating) {
+        endMutation();
+      }
+      if (mutationKey) {
+        inflightMutations.delete(mutationKey);
+      }
+    }
+  })();
+
+  if (mutationKey) {
+    inflightMutations.set(mutationKey, run);
+  }
+  return run;
 }
 
 export function loginRequest(email: string, password: string) {
   return request<{ user: PublicUser }>("/api/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
-    signal: AbortSignal.timeout(20_000),
+    timeoutMs: 25_000,
   });
 }
 

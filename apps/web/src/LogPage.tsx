@@ -180,6 +180,9 @@ export function LogPage() {
   }
 
   async function saveDraft() {
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -196,6 +199,9 @@ export function LogPage() {
   }
 
   async function submit() {
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
