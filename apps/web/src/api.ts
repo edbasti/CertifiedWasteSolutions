@@ -29,6 +29,7 @@ export class ApiError extends Error {
 }
 
 let mutatingCount = 0;
+let busyWatchdog: number | null = null;
 const inflightMutations = new Map<string, Promise<unknown>>();
 
 function setDocumentBusy(active: boolean) {
@@ -38,16 +39,39 @@ function setDocumentBusy(active: boolean) {
   document.documentElement.toggleAttribute("data-api-busy", active);
 }
 
+/** Clears a stuck global busy lock (e.g. after a hung request). Safe to call from login. */
+export function clearApiBusy() {
+  mutatingCount = 0;
+  if (busyWatchdog !== null && typeof window !== "undefined") {
+    window.clearTimeout(busyWatchdog);
+    busyWatchdog = null;
+  }
+  setDocumentBusy(false);
+}
+
 function beginMutation() {
   mutatingCount += 1;
   if (mutatingCount === 1) {
     setDocumentBusy(true);
+    if (typeof window !== "undefined") {
+      if (busyWatchdog !== null) {
+        window.clearTimeout(busyWatchdog);
+      }
+      // Never leave the UI locked longer than this if a request never settles.
+      busyWatchdog = window.setTimeout(() => {
+        clearApiBusy();
+      }, 30_000);
+    }
   }
 }
 
 function endMutation() {
   mutatingCount = Math.max(0, mutatingCount - 1);
   if (mutatingCount === 0) {
+    if (busyWatchdog !== null && typeof window !== "undefined") {
+      window.clearTimeout(busyWatchdog);
+      busyWatchdog = null;
+    }
     setDocumentBusy(false);
   }
 }
@@ -64,6 +88,8 @@ type RequestInitWithTimeout = RequestInit & { timeoutMs?: number };
 async function request<T>(path: string, init?: RequestInitWithTimeout): Promise<T> {
   const method = (init?.method ?? "GET").toUpperCase();
   const isMutating = method !== "GET" && method !== "HEAD";
+  // Login/logout manage their own UI; locking every primary button leaves Sign in stuck.
+  const locksUi = isMutating && path !== "/api/login" && path !== "/api/logout";
   const { timeoutMs, signal: providedSignal, ...fetchInit } = init ?? {};
   const mutationKey = isMutating
     ? `${method}:${path}:${typeof fetchInit.body === "string" ? fetchInit.body : ""}`
@@ -81,7 +107,7 @@ async function request<T>(path: string, init?: RequestInitWithTimeout): Promise<
   const signal = providedSignal ?? controller?.signal;
 
   const run = (async () => {
-    if (isMutating) {
+    if (locksUi) {
       beginMutation();
     }
     try {
@@ -122,7 +148,7 @@ async function request<T>(path: string, init?: RequestInitWithTimeout): Promise<
       if (timer) {
         window.clearTimeout(timer);
       }
-      if (isMutating) {
+      if (locksUi) {
         endMutation();
       }
       if (mutationKey) {
@@ -146,7 +172,7 @@ export function loginRequest(email: string, password: string) {
 }
 
 export function logoutRequest() {
-  return request<{ ok: true }>("/api/logout", { method: "POST" });
+  return request<{ ok: true }>("/api/logout", { method: "POST", timeoutMs: 8_000 });
 }
 
 export async function currentUser(): Promise<PublicUser | null> {

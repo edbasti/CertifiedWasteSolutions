@@ -58,6 +58,15 @@ html[data-api-busy] form button.secondary {
   cursor: wait;
 }
 
+/* Login must stay clickable even if a prior request left the busy lock on. */
+html[data-api-busy] .login button.primary,
+html[data-api-busy] .login button[type="submit"],
+html[data-api-busy] .login form button.secondary {
+  pointer-events: auto;
+  opacity: 1;
+  cursor: pointer;
+}
+
 button {
   cursor: pointer;
 }

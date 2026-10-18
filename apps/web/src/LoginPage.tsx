@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate } from "react-router";
 import { appName, homePath } from "@cws/shared";
+import { clearApiBusy } from "./api";
 import { useSession } from "./session";
 
 export function LoginPage() {
@@ -9,6 +10,11 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    clearApiBusy();
+    setSubmitting(false);
+  }, []);
 
   if (loading) {
     return <p className="pending">Loading…</p>;
@@ -24,6 +30,7 @@ export function LoginPage() {
     }
     setSubmitting(true);
     setError(null);
+    clearApiBusy();
     try {
       const message = await login(email, password);
       if (message) {
@@ -31,6 +38,7 @@ export function LoginPage() {
       }
     } finally {
       setSubmitting(false);
+      clearApiBusy();
     }
   }
 
