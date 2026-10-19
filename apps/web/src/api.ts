@@ -172,7 +172,8 @@ export function loginRequest(email: string, password: string) {
 }
 
 export function logoutRequest() {
-  return request<{ ok: true }>("/api/logout", { method: "POST", timeoutMs: 8_000 });
+  // Short timeout: UI never waits on this; it only clears the server session in the background.
+  return request<{ ok: true }>("/api/logout", { method: "POST", timeoutMs: 3_000 });
 }
 
 export async function currentUser(): Promise<PublicUser | null> {

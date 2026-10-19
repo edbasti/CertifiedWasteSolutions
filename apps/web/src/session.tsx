@@ -29,16 +29,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     async function restore() {
       if (sessionStorage.getItem(signedOutFlag)) {
-        sessionStorage.removeItem(signedOutFlag);
-        try {
-          await logoutRequest();
-        } catch {
-          // Cookie clear may have failed once already; still show the login screen.
-        }
+        // Never block the login form on a slow/timing-out logout call.
         if (active && generation === loadGeneration.current) {
           setUser(null);
           setLoading(false);
         }
+        void logoutRequest()
+          .then(() => sessionStorage.removeItem(signedOutFlag))
+          .catch(() => {
+            // Keep the flag so a later visit can retry clearing the server session.
+          });
         return;
       }
 
@@ -96,15 +96,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       setUser(null);
       sessionStorage.setItem(signedOutFlag, "1");
-      try {
-        await logoutRequest();
-        sessionStorage.removeItem(signedOutFlag);
-      } catch {
-        // Keep the flag so the next page load retries clearing the server session.
-      }
+      // Leave immediately — awaiting /api/logout was freezing the login screen when it timed out.
       if (window.location.pathname !== "/login") {
         window.location.assign("/login");
+        return;
       }
+      void logoutRequest()
+        .then(() => sessionStorage.removeItem(signedOutFlag))
+        .catch(() => {
+          // Keep the flag so a later visit can retry clearing the server session.
+        });
     })().finally(() => {
       logoutInFlight.current = null;
     });

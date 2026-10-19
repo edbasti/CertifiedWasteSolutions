@@ -158,10 +158,20 @@ export function registerAuth(app: Hono<AppEnv>, db: CwsDatabase) {
 
   app.post("/api/logout", async (c) => {
     const token = getCookie(c, sessionCookie);
-    if (token) {
-      await db.delete(sessions).where(eq(sessions.id, token));
-    }
+    // Clear the cookie first so the client is signed out even if DB delete is slow.
     clearSessionCookie(c);
+    if (token) {
+      try {
+        await Promise.race([
+          db.delete(sessions).where(eq(sessions.id, token)),
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error("logout db timeout")), 2_000);
+          }),
+        ]);
+      } catch {
+        // Orphaned session rows expire; do not delay the response.
+      }
+    }
     return c.json({ ok: true });
   });
 
